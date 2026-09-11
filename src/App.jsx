@@ -2374,7 +2374,7 @@ function readLaunchCache() {
                       undefined,
                       {
                         minimumFractionDigits: 2,
-                        maximumFractionDigits: 4,
+                        maximumFractionDigits: 2,
                       }
                     )}
                   </strong>
@@ -2423,12 +2423,6 @@ function readLaunchCache() {
               />
             </div>
 
-            <button className="filter-active">
-              NEW TOKENS
-            </button>
-
-            <button>TRENDING</button>
-            <button>MARKET CAP</button>
             <div className="market-ticker">
               <div className="market-ticker-track">
 
@@ -2518,7 +2512,7 @@ function readLaunchCache() {
               <span>TOKEN</span>
               <span>MARKET CAP</span>
               <span>TXNS</span>
-              <span>PRICE</span>
+              <span>PRICE (USDC)</span>
               <span>PROGRESS</span>
               <span>LIQUIDITY</span>
 
@@ -2803,10 +2797,9 @@ function readLaunchCache() {
                       undefined,
                       {
                         minimumFractionDigits: 8,
-                        maximumFractionDigits: 12,
+                        maximumFractionDigits: 8,
                       }
-                    )}{" "}
-                    USDC
+                    )}
                   </span>
 
                     <span className="positive">

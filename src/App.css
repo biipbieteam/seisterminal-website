@@ -960,7 +960,7 @@ button {
 }
 
 .market-cap-live {
-  color: #b56cff;
+  color: #c8ff3d;
   font-weight: 800;
 }
 
@@ -1035,21 +1035,13 @@ button {
 
     .market-toolbar {
       display: grid;
-  
-      grid-template-columns:
-        96px
-        auto
-        auto
-        auto;
-  
+    
+      grid-template-columns: 1fr;
+    
       align-items: center;
       gap: 8px;
-  
+    
       overflow: hidden;
-  
-      transition:
-        grid-template-columns 0.28s
-        cubic-bezier(0.22, 1, 0.36, 1);
     }
   
   
@@ -1057,9 +1049,9 @@ button {
   
     .market-toolbar .search-box {
       width: 100%;
+      max-width: 100%;
       min-width: 0;
-      max-width: none;
-  
+    
       grid-column: 1;
       grid-row: 1;
     }
@@ -1072,45 +1064,6 @@ button {
     }
   
   
-    /* FILTER BUTTONS */
-  
-    .market-toolbar > button {
-      min-width: 0;
-  
-      white-space: nowrap;
-      overflow: hidden;
-  
-      opacity: 1;
-      transform: translateX(0);
-  
-      transition:
-        opacity 0.18s ease,
-        transform 0.28s
-        cubic-bezier(0.22, 1, 0.36, 1);
-    }
-  
-  
-    /* SEARCH FOCUSED */
-  
-    .market-toolbar:has(
-      .search-box input:focus
-    ) {
-      grid-template-columns:
-        1fr
-        0fr
-        0fr
-        0fr;
-    }
-  
-  
-    .market-toolbar:has(
-      .search-box input:focus
-    ) > button {
-      opacity: 0;
-      transform: translateX(28px);
-  
-      pointer-events: none;
-    }
   
   
     /* TOKEN TICKER — ALWAYS SECOND ROW */
@@ -1125,31 +1078,6 @@ button {
       margin-left: 0;
     }
   }
-
-  @media (max-width: 390px) {
-    .market-toolbar {
-      grid-template-columns:
-        82px
-        minmax(78px, auto)
-        minmax(74px, auto)
-        minmax(78px, auto);
-  
-      gap: 6px;
-    }
-  
-    .market-toolbar > button {
-      padding-left: 8px;
-      padding-right: 8px;
-  
-      font-size: 9px;
-    }
-  
-    .market-toolbar .filter-active {
-      white-space: normal;
-      line-height: 1.1;
-    }
-  }
-
 
 
 /* =========================================================
@@ -4806,7 +4734,7 @@ button {
   .market-ticker-item > span {
     display: inline-block;
   
-    color: #35f58a;
+    color: #c8ff3d;
   
     font-size: 12px;
     font-weight: 800;
@@ -5484,6 +5412,22 @@ button {
     line-height: 1;
   
     z-index: 3;
+  }
+
+}
+
+@media (max-width: 768px) {
+
+  /* =========================================================
+     MOBILE — TOKEN TABLE VERTICAL SCROLL ONLY
+     ========================================================= */
+
+  .market-table {
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    touch-action: pan-y;
+    overscroll-behavior-x: none;
   }
 
 }
