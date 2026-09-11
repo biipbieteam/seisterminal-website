@@ -210,6 +210,11 @@ function App() {
     setActivePage,
   ] = useState("MARKET");
 
+  const [
+    mobileSidebarOpen, 
+    setMobileSidebarOpen
+  ] = useState(false);
+
   const {
     providers,
     selectedProvider,
@@ -2160,13 +2165,43 @@ function readLaunchCache() {
 
   return (
     <div className="terminal-app">
-      <aside className="sidebar">
+      <button
+        type="button"
+        className={
+          mobileSidebarOpen
+            ? "mobile-sidebar-toggle mobile-open"
+            : "mobile-sidebar-toggle"
+        }
+        onClick={() => {
+          setMobileSidebarOpen((open) => !open);
+        }}
+        aria-label={
+          mobileSidebarOpen
+            ? "Close navigation"
+            : "Open navigation"
+        }
+      >
+        {mobileSidebarOpen ? "<" : ">"}
+      </button>
+      <aside
+        className={
+          mobileSidebarOpen
+            ? "sidebar mobile-open"
+            : "sidebar"
+        }
+      >
         <div className="sidebar-brand">
           <span className="brand-mark">&gt;_</span>
 
-          <span>
-            SEIS TERMINAL
-          </span>
+          <div className="sidebar-brand-text">
+            <span className="sidebar-brand-title">
+              SEIS TERMINAL
+            </span>
+
+            <span className="sidebar-brand-powered">
+              powered by ARC TERMINAL
+            </span>
+          </div>
         </div>
 
           <nav className="sidebar-nav">
@@ -2209,29 +2244,16 @@ function readLaunchCache() {
             <button
               type="button"
               className="sidebar-nav-item"
-              onClick={() => {
-                setActivePage("MARKET");
-              }}
-            >
-              <span className="sidebar-nav-icon">
-                ⇄
-              </span>
-
-              <span>
-                TRADE
-              </span>
-            </button>
-
-            <button
-              type="button"
-              className="sidebar-nav-item"
             >
               <span className="sidebar-nav-icon">
                 ↔
               </span>
 
-              <span>
+              <span className="sidebar-nav-label">
                 SWAP
+                <small className="sidebar-soon">
+                  SOON
+                </small>
               </span>
             </button>
 
@@ -2308,6 +2330,17 @@ function readLaunchCache() {
           </button>
         </div>
       </aside>
+
+      {mobileSidebarOpen && (
+        <button
+          type="button"
+          className="mobile-sidebar-backdrop"
+          aria-label="Close navigation"
+          onClick={() => {
+            setMobileSidebarOpen(false);
+          }}
+        />
+      )}
 
       <main className="app-main">
 
@@ -3385,6 +3418,7 @@ function readLaunchCache() {
                                 .toUpperCase()}
                             </span>
                           )}
+
                         </div>
 
                         <div className="trade-terminal-token-text">
@@ -3437,9 +3471,6 @@ function readLaunchCache() {
                               Launched on ARC Testnet
                             </span>
 
-                            <span className="trade-holder-count-badge">
-                              Holders: {tokenHolderCount}
-                            </span>
                           </div>
                         </div>
                       </div>
