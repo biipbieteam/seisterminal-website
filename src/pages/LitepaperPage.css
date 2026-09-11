@@ -1,0 +1,1111 @@
+/* =========================================================
+   LITEPAPER
+   ========================================================= */
+
+   .litepaper-page {
+    width: 100%;
+    height: 100%;
+  
+    display: grid;
+    grid-template-columns:
+      250px
+      minmax(0, 1fr);
+  
+    overflow: hidden;
+  
+    background:
+      radial-gradient(
+        circle at 72% 0%,
+        rgba(183, 245, 31, 0.035),
+        transparent 34%
+      ),
+      #050505;
+  }
+  
+  
+  /* =========================================================
+     INDEX
+     ========================================================= */
+  
+  .litepaper-index {
+    height: 100%;
+  
+    padding: 28px 18px;
+  
+    border-right:
+      1px solid
+      rgba(183, 245, 31, 0.10);
+  
+    background: #070907;
+  
+    overflow-y: auto;
+  }
+  
+  
+  .litepaper-index-title {
+    margin-bottom: 22px;
+    padding: 0 10px 14px;
+  
+    border-bottom:
+      1px solid
+      rgba(183, 245, 31, 0.08);
+  
+    color: #b7f51f;
+  
+    font-family: monospace;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+  }
+  
+  
+  .litepaper-index nav {
+    display: flex;
+    flex-direction: column;
+  
+    gap: 4px;
+  }
+  
+  
+  .litepaper-index a {
+    min-height: 42px;
+  
+    display: flex;
+    align-items: center;
+  
+    gap: 10px;
+  
+    padding: 0 10px;
+  
+    border:
+      1px solid
+      transparent;
+  
+    border-radius: 7px;
+  
+    color: #8c9488;
+  
+    text-decoration: none;
+  
+    font-size: 10px;
+    font-weight: 700;
+  
+    transition:
+      color 0.16s ease,
+      background 0.16s ease,
+      border-color 0.16s ease;
+  }
+  
+  
+  .litepaper-index a span {
+    min-width: 22px;
+  
+    color: #4f574b;
+  
+    font-family: monospace;
+    font-size: 8px;
+  }
+  
+  
+  .litepaper-index a:hover {
+    color: #b7f51f;
+  
+    border-color:
+      rgba(183, 245, 31, 0.10);
+  
+    background:
+      rgba(183, 245, 31, 0.035);
+  }
+  
+  
+  /* =========================================================
+     CONTENT
+     ========================================================= */
+  
+  .litepaper-content {
+    height: 100%;
+  
+    padding:
+      0
+      clamp(34px, 5vw, 78px)
+      100px;
+  
+    overflow-y: auto;
+  
+    scroll-behavior: smooth;
+  
+    scrollbar-width: thin;
+  
+    scrollbar-color:
+      #b7f51f
+      #090b09;
+  }
+  
+  
+  .litepaper-content::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  
+  .litepaper-content::-webkit-scrollbar-track {
+    background: #090b09;
+  }
+  
+  
+  .litepaper-content::-webkit-scrollbar-thumb {
+    border:
+      2px solid
+      #090b09;
+  
+    border-radius: 999px;
+  
+    background:
+      linear-gradient(
+        180deg,
+        #b7f51f,
+        #8fc817
+      );
+  }
+  
+  
+  /* =========================================================
+     COVER
+     ========================================================= */
+  
+  .litepaper-cover {
+    min-height:
+      calc(100vh - 40px);
+  
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  
+    max-width: 980px;
+  
+    border-bottom:
+      1px solid
+      rgba(183, 245, 31, 0.10);
+  }
+  
+  
+  .litepaper-breadcrumb {
+    margin-bottom: 70px;
+  
+    color: #72796e;
+  
+    font-family: monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  
+  
+  .litepaper-version {
+    color: #b7f51f;
+  
+    font-family: monospace;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+  }
+  
+  
+  .litepaper-cover h1 {
+    margin:
+      18px
+      0
+      24px;
+  
+    color: #f4f5ef;
+  
+    font-size:
+      clamp(
+        48px,
+        6vw,
+        82px
+      );
+  
+    line-height: 0.95;
+  
+    letter-spacing: -3.4px;
+  }
+  
+  
+  .litepaper-lead {
+    max-width: 720px;
+  
+    margin: 0;
+  
+    color: #92998e;
+  
+    font-size: 16px;
+    line-height: 1.8;
+  }
+  
+  
+  .litepaper-cover-meta {
+    max-width: 760px;
+  
+    display: grid;
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  
+    margin-top: 60px;
+  
+    border:
+      1px solid
+      #252925;
+  
+    border-radius: 8px;
+  
+    overflow: hidden;
+  
+    background: #0b0d0b;
+  }
+  
+  
+  .litepaper-cover-meta > div {
+    padding: 18px;
+  
+    display: flex;
+    flex-direction: column;
+  
+    gap: 9px;
+  
+    border-right:
+      1px solid
+      #252925;
+  }
+  
+  
+  .litepaper-cover-meta > div:last-child {
+    border-right: 0;
+  }
+  
+  
+  .litepaper-cover-meta span {
+    color: #646d60;
+  
+    font-family: monospace;
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  
+  
+  .litepaper-cover-meta strong {
+    color: #b7f51f;
+  
+    font-size: 11px;
+  }
+  
+  
+  /* =========================================================
+     SECTION
+     ========================================================= */
+  
+  .litepaper-section {
+    max-width: 980px;
+  
+    display: grid;
+    grid-template-columns:
+      74px
+      minmax(0, 1fr);
+  
+    gap: 28px;
+  
+    padding: 100px 0;
+  
+    border-bottom:
+      1px solid
+      rgba(183, 245, 31, 0.08);
+  
+    scroll-margin-top: 40px;
+  }
+  
+  
+  .litepaper-section-number {
+    padding-top: 5px;
+  
+    color:
+      rgba(183, 245, 31, 0.38);
+  
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  
+  
+  .litepaper-section-body {
+    min-width: 0;
+  }
+  
+  
+  .litepaper-kicker {
+    color: #b7f51f;
+  
+    font-family: monospace;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+  }
+  
+  
+  .litepaper-section h2 {
+    max-width: 780px;
+  
+    margin:
+      14px
+      0
+      26px;
+  
+    color: #f4f5ef;
+  
+    font-size:
+      clamp(
+        30px,
+        3vw,
+        46px
+      );
+  
+    line-height: 1.08;
+  
+    letter-spacing: -1.7px;
+  }
+  
+  
+  .litepaper-section-body > p {
+    max-width: 760px;
+  
+    margin:
+      0
+      0
+      16px;
+  
+    color: #92998e;
+  
+    font-size: 14px;
+    line-height: 1.85;
+  }
+  
+  
+  /* =========================================================
+     STATEMENT
+     ========================================================= */
+  
+  .litepaper-statement {
+    max-width: 760px;
+  
+    margin-top: 30px;
+    padding: 22px;
+  
+    border:
+      1px solid
+      rgba(183, 245, 31, 0.18);
+  
+    border-radius: 8px;
+  
+    background:
+      rgba(183, 245, 31, 0.025);
+  }
+  
+  
+  .litepaper-statement span {
+    display: block;
+  
+    color: #687361;
+  
+    font-family: monospace;
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  
+  
+  .litepaper-statement strong {
+    display: block;
+  
+    margin-top: 14px;
+  
+    color: #b7f51f;
+  
+    font-family: monospace;
+    font-size: 18px;
+  }
+  
+  
+  /* =========================================================
+     PRINCIPLES
+     ========================================================= */
+  
+  .litepaper-principles-grid,
+  .litepaper-architecture {
+    max-width: 760px;
+  
+    display: grid;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  
+    gap: 12px;
+  
+    margin-top: 30px;
+  }
+  
+  
+  .litepaper-principles-grid > div,
+  .litepaper-architecture > div {
+    min-height: 170px;
+  
+    padding: 20px;
+  
+    border:
+      1px solid
+      #252925;
+  
+    border-radius: 8px;
+  
+    background: #0b0d0b;
+  }
+  
+  
+  .litepaper-principles-grid span,
+  .litepaper-architecture span {
+    color: #5f685a;
+  
+    font-family: monospace;
+    font-size: 8px;
+  }
+  
+  
+  .litepaper-principles-grid strong,
+  .litepaper-architecture strong {
+    display: block;
+  
+    margin-top: 24px;
+  
+    color: #b7f51f;
+  
+    font-size: 12px;
+  }
+  
+  
+  .litepaper-principles-grid p,
+  .litepaper-architecture p {
+    margin: 10px 0 0;
+  
+    color: #7f887b;
+  
+    font-size: 10px;
+    line-height: 1.65;
+  }
+  
+  
+  /* =========================================================
+     STATE FLOW
+     ========================================================= */
+  
+  .litepaper-state-flow {
+    max-width: 760px;
+  
+    display: grid;
+    grid-template-columns:
+      1fr auto 1fr auto 1fr;
+  
+    align-items: center;
+  
+    gap: 12px;
+  
+    margin-top: 30px;
+  }
+  
+  
+  .litepaper-state-flow > div:nth-child(odd) {
+    min-height: 125px;
+  
+    padding: 18px;
+  
+    display: flex;
+    flex-direction: column;
+  
+    border:
+      1px solid
+      #252925;
+  
+    border-radius: 8px;
+  
+    background: #0b0d0b;
+  }
+  
+  
+  .litepaper-state-flow > div:nth-child(even) {
+    color: #b7f51f;
+  
+    font-family: monospace;
+    font-size: 18px;
+  }
+  
+  
+  .litepaper-state-flow span {
+    color: #5f685a;
+  
+    font-family: monospace;
+    font-size: 8px;
+  }
+  
+  
+  .litepaper-state-flow strong {
+    margin-top: 22px;
+  
+    color: #b7f51f;
+  
+    font-size: 11px;
+  }
+  
+  
+  .litepaper-state-flow small {
+    margin-top: 7px;
+  
+    color: #7f887b;
+  
+    font-size: 9px;
+  }
+  
+  
+  /* =========================================================
+     METRICS
+     ========================================================= */
+  
+  .litepaper-metrics,
+  .litepaper-reserve-grid {
+    max-width: 760px;
+  
+    display: grid;
+  
+    margin-top: 28px;
+  
+    border:
+      1px solid
+      #252925;
+  
+    border-radius: 8px;
+  
+    overflow: hidden;
+  
+    background: #0b0d0b;
+  }
+  
+  
+  .litepaper-metrics {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+  
+  
+  .litepaper-reserve-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+  
+  
+  .litepaper-metrics > div,
+  .litepaper-reserve-grid > div {
+    padding: 19px;
+  
+    display: flex;
+    flex-direction: column;
+  
+    gap: 10px;
+  
+    border-right:
+      1px solid
+      #252925;
+  }
+  
+  
+  .litepaper-metrics > div:last-child,
+  .litepaper-reserve-grid > div:last-child {
+    border-right: 0;
+  }
+  
+  
+  .litepaper-metrics span,
+  .litepaper-reserve-grid span {
+    color: #626b5e;
+  
+    font-family: monospace;
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  
+  
+  .litepaper-metrics strong,
+  .litepaper-reserve-grid strong {
+    color: #b7f51f;
+  
+    font-size: 13px;
+  }
+  
+  
+  /* =========================================================
+     SPLIT
+     ========================================================= */
+  
+  .litepaper-split {
+    max-width: 760px;
+  
+    display: grid;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  
+    gap: 12px;
+  
+    margin-top: 26px;
+  }
+  
+  
+  .litepaper-split > div {
+    padding: 20px;
+  
+    border:
+      1px solid
+      rgba(183, 245, 31, 0.14);
+  
+    border-radius: 8px;
+  
+    background:
+      rgba(183, 245, 31, 0.025);
+  }
+  
+  
+  .litepaper-split span {
+    color: #687361;
+  
+    font-family: monospace;
+    font-size: 8px;
+  }
+  
+  
+  .litepaper-split strong {
+    display: block;
+  
+    margin-top: 15px;
+  
+    color: #b7f51f;
+  
+    font-size: 21px;
+  }
+  
+  
+  .litepaper-split small {
+    display: block;
+  
+    margin-top: 7px;
+  
+    color: #899184;
+  
+    font-family: monospace;
+    font-size: 9px;
+  }
+  
+  
+  /* =========================================================
+     FORMULA
+     ========================================================= */
+  
+  .litepaper-formula {
+    max-width: 760px;
+  
+    margin-top: 28px;
+    padding: 26px;
+  
+    border:
+      1px solid
+      rgba(183, 245, 31, 0.18);
+  
+    border-radius: 8px;
+  
+    background:
+      radial-gradient(
+        circle at 80% 20%,
+        rgba(183, 245, 31, 0.05),
+        transparent 40%
+      ),
+      #0b0d0b;
+  }
+  
+  
+  .litepaper-formula span {
+    color: #687361;
+  
+    font-family: monospace;
+    font-size: 8px;
+    letter-spacing: 1px;
+  }
+  
+  
+  .litepaper-formula strong {
+    display: block;
+  
+    margin-top: 18px;
+  
+    color: #b7f51f;
+  
+    font-family: monospace;
+    font-size: 30px;
+  }
+  
+  
+  .litepaper-equations {
+    max-width: 760px;
+  
+    display: flex;
+    flex-direction: column;
+  
+    gap: 8px;
+  
+    margin-top: 24px;
+  }
+  
+  
+  .litepaper-equations code {
+    padding: 14px 16px;
+  
+    border:
+      1px solid
+      #252925;
+  
+    border-radius: 7px;
+  
+    background: #080a08;
+  
+    color: #a3ad9e;
+  
+    font-family: monospace;
+    font-size: 10px;
+  
+    white-space: normal;
+  }
+  
+  
+  /* =========================================================
+     ARCHITECTURE CONTRACT
+     ========================================================= */
+  
+  .litepaper-contract {
+    max-width: 760px;
+  
+    margin-top: 24px;
+    padding: 20px;
+  
+    border:
+      1px solid
+      rgba(183, 245, 31, 0.15);
+  
+    border-radius: 8px;
+  
+    background:
+      rgba(183, 245, 31, 0.025);
+  }
+  
+  
+  .litepaper-contract span {
+    display: block;
+  
+    color: #687361;
+  
+    font-family: monospace;
+    font-size: 8px;
+  }
+  
+  
+  .litepaper-contract strong {
+    display: block;
+  
+    margin-top: 13px;
+  
+    color: #b7f51f;
+  
+    font-family: monospace;
+    font-size: 11px;
+  
+    overflow-wrap: anywhere;
+  }
+  
+  
+  /* =========================================================
+     SECURITY
+     ========================================================= */
+  
+  .litepaper-security-grid,
+  .litepaper-future-grid {
+    max-width: 760px;
+  
+    display: grid;
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  
+    gap: 10px;
+  
+    margin: 28px 0;
+  }
+  
+  
+  .litepaper-security-grid > div,
+  .litepaper-future-grid > div {
+    min-height: 105px;
+  
+    padding: 17px;
+  
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  
+    border:
+      1px solid
+      #252925;
+  
+    border-radius: 8px;
+  
+    background: #0b0d0b;
+  }
+  
+  
+  .litepaper-security-grid strong,
+  .litepaper-future-grid strong {
+    color: #b7f51f;
+  
+    font-size: 10px;
+  }
+  
+  
+  .litepaper-security-grid span,
+  .litepaper-future-grid span {
+    color: #687361;
+  
+    font-family: monospace;
+    font-size: 8px;
+  }
+  
+  
+  /* =========================================================
+     RISK
+     ========================================================= */
+  
+  .litepaper-risk {
+    max-width: 760px;
+  
+    margin-top: 28px;
+    padding: 22px;
+  
+    border:
+      1px solid
+      rgba(255, 92, 112, 0.24);
+  
+    border-radius: 8px;
+  
+    background:
+      rgba(255, 92, 112, 0.035);
+  }
+  
+  
+  .litepaper-risk span {
+    color: #ff7a89;
+  
+    font-family: monospace;
+    font-size: 8px;
+    font-weight: 800;
+  }
+  
+  
+  .litepaper-risk strong {
+    display: block;
+  
+    margin-top: 14px;
+  
+    color: #f4f5ef;
+  
+    font-size: 14px;
+  }
+  
+  
+  .litepaper-risk p {
+    max-width: 620px;
+  
+    margin: 10px 0 0;
+  
+    color: #9a8d8d;
+  
+    font-size: 10px;
+    line-height: 1.65;
+  }
+  
+  
+  /* =========================================================
+     END
+     ========================================================= */
+  
+  .litepaper-end {
+    max-width: 760px;
+  
+    margin-top: 50px;
+    padding: 28px;
+  
+    border:
+      1px solid
+      rgba(183, 245, 31, 0.18);
+  
+    border-radius: 8px;
+  
+    background:
+      radial-gradient(
+        circle at 75% 30%,
+        rgba(183, 245, 31, 0.045),
+        transparent 44%
+      ),
+      #0b0d0b;
+  }
+  
+  
+  .litepaper-end span {
+    color: #687361;
+  
+    font-family: monospace;
+    font-size: 8px;
+  }
+  
+  
+  .litepaper-end strong {
+    display: block;
+  
+    margin-top: 16px;
+  
+    color: #b7f51f;
+  
+    font-size: 18px;
+  }
+  
+  
+  .litepaper-end p {
+    max-width: 590px;
+  
+    margin: 12px 0 0;
+  
+    color: #7f887b;
+  
+    font-size: 10px;
+    line-height: 1.7;
+  }
+  
+  
+  /* =========================================================
+     MOBILE
+     ========================================================= */
+  
+  @media (max-width: 1100px) {
+    .litepaper-page {
+      grid-template-columns:
+        210px
+        minmax(0, 1fr);
+    }
+  }
+  
+  
+  @media (max-width: 760px) {
+    .litepaper-page {
+      display: block;
+  
+      overflow-y: auto;
+    }
+  
+    .litepaper-index {
+      height: auto;
+  
+      padding: 14px;
+  
+      border-right: 0;
+  
+      border-bottom:
+        1px solid
+        rgba(183, 245, 31, 0.10);
+    }
+  
+    .litepaper-index-title {
+      margin-bottom: 10px;
+    }
+  
+    .litepaper-index nav {
+      flex-direction: row;
+  
+      overflow-x: auto;
+    }
+  
+    .litepaper-index a {
+      min-width: max-content;
+    }
+  
+    .litepaper-content {
+      height: auto;
+  
+      overflow: visible;
+  
+      padding:
+        0
+        20px
+        60px;
+    }
+  
+    .litepaper-cover {
+      min-height: auto;
+  
+      padding: 44px 0 60px;
+    }
+  
+    .litepaper-breadcrumb {
+      margin-bottom: 42px;
+    }
+  
+    .litepaper-cover-meta,
+    .litepaper-metrics,
+    .litepaper-reserve-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .litepaper-cover-meta > div,
+    .litepaper-metrics > div,
+    .litepaper-reserve-grid > div {
+      border-right: 0;
+  
+      border-bottom:
+        1px solid
+        #252925;
+    }
+  
+    .litepaper-cover-meta > div:last-child,
+    .litepaper-metrics > div:last-child,
+    .litepaper-reserve-grid > div:last-child {
+      border-bottom: 0;
+    }
+  
+    .litepaper-section {
+      grid-template-columns: 1fr;
+  
+      gap: 14px;
+  
+      padding: 70px 0;
+    }
+  
+    .litepaper-principles-grid,
+    .litepaper-architecture,
+    .litepaper-split,
+    .litepaper-security-grid,
+    .litepaper-future-grid {
+      grid-template-columns: 1fr;
+    }
+  
+    .litepaper-state-flow {
+      grid-template-columns: 1fr;
+    }
+  
+    .litepaper-state-flow
+    > div:nth-child(even) {
+      display: none;
+    }
+  }
