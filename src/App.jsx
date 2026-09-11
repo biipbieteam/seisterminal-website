@@ -2518,21 +2518,14 @@ function readLaunchCache() {
 
             </div>
 
-            {launchesLoading && (
-              <div className="market-row">
-                <div className="market-token">
-                  <div className="token-icon">
-                    &gt;_
-                  </div>
+            {launchesLoading && liveLaunches.length === 0 && (
+              <div className="market-loading-layer">
+                <div className="market-loading-toast">
+                  <div className="market-loading-spinner" />
 
-                  <div>
-                    <strong>
-                      READING ARC TESTNET_
-                    </strong>
-
-                    <small>
-                      Loading live launches...
-                    </small>
+                  <div className="market-loading-content">
+                    <strong>LOADING MARKET_</strong>
+                    <span>Fetching tokens from ARC Testnet...</span>
                   </div>
                 </div>
               </div>

@@ -5471,6 +5471,86 @@ button {
   letter-spacing: 0.06em;
 }
 
+.market-table {
+  position: relative;
+}
+
+.market-loading-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 220px;
+
+  background: rgba(6, 8, 6, 0.72);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.market-loading-toast {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  min-width: 280px;
+  padding: 16px 18px;
+
+  background: #080a08;
+  border: 1px solid rgba(183, 245, 31, 0.42);
+
+  box-shadow:
+    0 12px 35px rgba(0, 0, 0, 0.45),
+    0 0 24px rgba(183, 245, 31, 0.08);
+}
+
+.market-loading-spinner {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+
+  border: 3px solid rgba(183, 245, 31, 0.16);
+  border-top-color: #b7f51f;
+
+  border-radius: 50%;
+
+  animation: marketLoadingSpin 0.75s linear infinite;
+}
+
+.market-loading-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.market-loading-content strong {
+  color: #b7f51f;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+.market-loading-content span {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 11px;
+}
+
+@keyframes marketLoadingSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .market-loading-toast {
+    width: calc(100% - 32px);
+    min-width: 0;
+    max-width: 340px;
+  }
+}
+
 
 
   
