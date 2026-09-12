@@ -34,7 +34,7 @@ typechain-types/
 !.env.example
 
 *.local
-
+.env.backfill
 
 # =========================================================
 # LOGS

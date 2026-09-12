@@ -11,6 +11,7 @@ import {
 } from "./contracts/launchWriter.js";
 import {
   getLaunchMetadata,
+  getIndexedLaunches,
 } from "./lib/launchMetadata.js";
 import { saveLaunchMetadata } from "./lib/saveLaunchMetadata";
 import {
@@ -253,9 +254,12 @@ function App() {
       const cachedLaunches =
         readLaunchCache();
   
+  
       /*
-       * CACHE FIRST:
-       * show previous launches immediately.
+       * CACHE FIRST
+       *
+       * Show the previous market immediately
+       * while the indexed database is queried.
        */
       if (
         liveLaunches.length === 0
@@ -273,114 +277,171 @@ function App() {
         }
       }
   
+  
+      let orderedLaunches;
+  
+  
       /*
-       * Blockchain remains the source
-       * of truth.
+       * ========================================================
+       * PRIMARY MARKET SOURCE:
+       * SUPABASE INDEX
+       * ========================================================
        *
-       * Cache is only used for immutable
-       * metadata optimization.
+       * One database query instead of
+       * N sequential blockchain RPC reads.
        */
-      const launches =
-        await getAllFairLaunches(
-          cachedLaunches
-        );
-
-      /*
-       * Supabase only enriches the
-       * on-chain launch data.
-       */
-      let metadata = [];
-  
       try {
-        metadata =
-          await getLaunchMetadata();
-      } catch (metadataError) {
+        orderedLaunches =
+          await getIndexedLaunches();
+  
+      } catch (
+        indexedError
+      ) {
         console.error(
-          "Failed to load launch metadata:",
+          "Indexed market read failed. Falling back to ARC RPC:",
+          indexedError
+        );
+  
+  
+        /*
+         * ======================================================
+         * EMERGENCY FALLBACK:
+         * BLOCKCHAIN READER
+         * ======================================================
+         *
+         * Keep the existing RPC path available
+         * if the indexed database is unavailable.
+         */
+  
+        const blockchainLaunches =
+          await getAllFairLaunches(
+            cachedLaunches
+          );
+  
+  
+        /*
+         * Existing metadata enrichment
+         * remains available for fallback.
+         */
+        let metadata = [];
+  
+        try {
+          metadata =
+            await getLaunchMetadata();
+        } catch (
           metadataError
-        );
-      }
+        ) {
+          console.error(
+            "Failed to load launch metadata:",
+            metadataError
+          );
+        }
   
-      const metadataByToken =
-        new Map(
-          metadata.map(
-            (item) => [
-              item.token_address.toLowerCase(),
-              item,
-            ]
-          )
-        );
   
-      const enrichedLaunches =
-        launches.map(
-          (launch) => {
-            const tokenAddress =
-              launch?.tokenAddress;
+        const metadataByToken =
+          new Map(
+            metadata.map(
+              (item) => [
+                item.token_address
+                  .toLowerCase(),
   
-            if (!tokenAddress) {
+                item,
+              ]
+            )
+          );
+  
+  
+        const enrichedLaunches =
+          blockchainLaunches.map(
+            (launch) => {
+              const tokenAddress =
+                launch?.tokenAddress;
+  
+              if (
+                !tokenAddress
+              ) {
+                return {
+                  ...launch,
+                  logoUrl:
+                    null,
+                };
+              }
+  
+  
+              const metadataItem =
+                metadataByToken.get(
+                  tokenAddress
+                    .toLowerCase()
+                );
+  
+  
               return {
                 ...launch,
-                logoUrl: null,
+  
+                logoUrl:
+                  metadataItem
+                    ?.logoUrl ||
+                  null,
+  
+                launchTransactionHash:
+                  metadataItem
+                    ?.transaction_hash ||
+                  null,
               };
             }
+          );
   
-            const metadataItem =
-              metadataByToken.get(
-                tokenAddress.toLowerCase()
-              );
   
-              return {
-                ...launch,
-              
-                logoUrl:
-                  metadataItem?.logoUrl ||
-                  null,
-              
-                launchTransactionHash:
-                  metadataItem?.transaction_hash ||
-                  null,
-              };
-          }
-        );
+        orderedLaunches =
+          [
+            ...enrichedLaunches,
+          ].reverse();
+      }
+  
   
       /*
-       * Newest launches first.
+       * Database query is already:
        *
-       * Use a new array instead of
-       * mutating enrichedLaunches.
+       * launch_id DESC
+       *
+       * so no reverse() is needed for
+       * the normal indexed path.
        */
-      const orderedLaunches =
-        [...enrichedLaunches]
-          .reverse();
-  
       setLiveLaunches(
         orderedLaunches
       );
-
+  
+  
       saveLaunchCache(
         orderedLaunches
       );
   
+  
       /*
-       * IMPORTANT:
-       * If the trading modal is open,
-       * replace selectedLaunch with its
-       * freshly-read on-chain state.
+       * Keep an open trade modal attached
+       * to the newest indexed state.
        */
       setSelectedLaunch(
-        (currentLaunch) => {
-          if (!currentLaunch) {
+        (
+          currentLaunch
+        ) => {
+          if (
+            !currentLaunch
+          ) {
             return null;
           }
+  
   
           const updatedLaunch =
             orderedLaunches.find(
               (launch) =>
                 launch.tokenAddress
                   .toLowerCase() ===
-                currentLaunch.tokenAddress
+                currentLaunch
+                  .tokenAddress
                   .toLowerCase()
             );
+  
   
           return (
             updatedLaunch ||
@@ -389,25 +450,30 @@ function App() {
         }
       );
   
+  
       return orderedLaunches;
   
     } catch (error) {
       console.error(
-        "Failed to load ARC launches:",
+        "Failed to load SEIS market:",
         error
       );
   
+  
       setLaunchesError(
-        "Unable to read ARC Testnet launches."
+        "Unable to load SEIS market."
       );
+  
   
       throw error;
   
     } finally {
-      setLaunchesLoading(false);
+      setLaunchesLoading(
+        false
+      );
     }
   };
-
+  
   const refreshTokenHolders =
   async (
     launch =

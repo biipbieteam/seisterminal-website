@@ -39,6 +39,8 @@ const LAUNCH_FACTORY_ABI = [
   "event FairTokenBought(uint256 indexed launchId, address indexed buyer, address indexed token, uint256 quoteAmount, uint256 tokenAmount, uint256 tokensSold, uint256 quoteReserve)",
 
   "event FairTokenSold(uint256 indexed launchId, address indexed seller, address indexed token, uint256 tokenAmount, uint256 quoteAmount, uint256 tokensSold, uint256 quoteReserve)",
+
+  "function fairLaunches(uint256) view returns (address token, address creator, uint256 totalSupply, uint256 bondingSupply, uint256 liquiditySupply, uint256 tokensSold, uint256 quoteReserve, uint256 transactionCount, uint8 status)",
 ];
 
 const ERC20_ABI = [
@@ -574,6 +576,75 @@ Deno.serve(
 
       /*
       * --------------------------------------------------
+      * READ AUTHORITATIVE LAUNCH STATE
+      * --------------------------------------------------
+      *
+      * Read only the launch affected by this trade.
+      *
+      * This also protects against two trade Edge Functions
+      * finishing out of order: we always write the latest
+      * current LaunchFactory state instead of blindly
+      * replaying an older event snapshot.
+      */
+
+      const launchStateCallData =
+      launchInterface
+        .encodeFunctionData(
+          "fairLaunches",
+          [
+            launchId,
+          ]
+        );
+
+      const launchStateResult =
+      await provider.call({
+        to:
+          LAUNCH_FACTORY_ADDRESS,
+
+        data:
+          launchStateCallData,
+      });
+
+      const launchState =
+      launchInterface
+        .decodeFunctionResult(
+          "fairLaunches",
+          launchStateResult
+        );
+
+      const onChainTokenAddress =
+      launchState.token;
+
+      const onChainTokensSold =
+      launchState.tokensSold;
+
+      const onChainQuoteReserve =
+      launchState.quoteReserve;
+
+      const onChainTransactionCount =
+      launchState.transactionCount;
+
+      const onChainStatus =
+      launchState.status;
+
+
+      /*
+      * Extra consistency check.
+      */
+      if (
+      onChainTokenAddress
+        .toLowerCase() !==
+      tokenAddress
+        .toLowerCase()
+      ) {
+      throw new Error(
+        "LaunchFactory token state does not match trade event."
+      );
+      }
+
+
+      /*
+      * --------------------------------------------------
       * PRICE SNAPSHOT
       * --------------------------------------------------
       */
@@ -856,6 +927,59 @@ const supplyPercent =
                   `Holder upsert failed: ${holderUpsertError.message}`
                 );
               }
+
+              const {
+                error:
+                  duplicateLaunchStateUpdateError,
+              } =
+                await supabase
+                  .from(
+                    "launch_tokens"
+                  )
+                  .update({
+                    tokens_sold:
+                    onChainTokensSold
+                      .toString(),
+                  
+                    quote_reserve:
+                      onChainQuoteReserve
+                        .toString(),
+                    
+                    transaction_count:
+                      onChainTransactionCount
+                        .toString(),
+                    
+                    status:
+                      Number(
+                        onChainStatus
+                      ),
+                    
+                      state_updated_at:
+                      new Date()
+                        .toISOString(),
+                  })
+                  .eq(
+                    "chain_id",
+                    Number(
+                      ARC_CHAIN_ID
+                    )
+                  )
+                  .eq(
+                    "launch_id",
+                    launchId.toString()
+                  )
+                  .lte(
+                    "transaction_count",
+                    onChainTransactionCount.toString()
+                  );
+              
+              if (
+                duplicateLaunchStateUpdateError
+              ) {
+                throw new Error(
+                  `Launch state update failed: ${duplicateLaunchStateUpdateError.message}`
+                );
+              }
           
           
               const {
@@ -966,6 +1090,70 @@ const supplyPercent =
           ) {
             throw new Error(
               `Holder upsert failed: ${holderUpsertError.message}`
+            );
+          }
+
+          /*
+          * --------------------------------------------------
+          * UPDATE LAUNCH MARKET STATE
+          * --------------------------------------------------
+          *
+          * FairTokenBought / FairTokenSold already contains
+          * the post-trade tokensSold and quoteReserve.
+          *
+          * Update only the launch that changed.
+          */
+
+          const {
+            error:
+              launchStateUpdateError,
+          } =
+            await supabase
+              .from(
+                "launch_tokens"
+              )
+              .update({
+                tokens_sold:
+                onChainTokensSold
+                  .toString(),
+              
+                quote_reserve:
+                  onChainQuoteReserve
+                    .toString(),
+                
+                transaction_count:
+                  onChainTransactionCount
+                    .toString(),
+                
+                status:
+                  Number(
+                    onChainStatus
+                  ),
+                
+                  state_updated_at:
+                  new Date()
+                    .toISOString(),
+              })
+              .eq(
+                "chain_id",
+                Number(
+                  ARC_CHAIN_ID
+                )
+              )
+              .eq(
+                "launch_id",
+                launchId.toString()
+              )
+              .lte(
+                "transaction_count",
+                onChainTransactionCount.toString()
+              );
+
+          if (
+            launchStateUpdateError
+          ) {
+            throw new Error(
+              `Launch state update failed: ${launchStateUpdateError.message}`
             );
           }
           
