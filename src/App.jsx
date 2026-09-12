@@ -3023,7 +3023,7 @@ function readLaunchCache() {
                         {/* RIGHT COLUMN — TOKEN LOGO */}
                         <div className="launch-logo-column">
                           <span className="launch-type-label">
-                            TOKEN LOGO (OPTIONAL)
+                            TOKEN LOGO (REQUIRED)
                           </span>
 
                           <div className="token-logo-card">
@@ -3213,7 +3213,8 @@ function readLaunchCache() {
                         disabled={
                           launching ||
                           !tokenName.trim() ||
-                          !tokenSymbol.trim()
+                          !tokenSymbol.trim() ||
+                          !tokenLogoFile
                         }
                         onClick={handleLaunchToken}
                       >
