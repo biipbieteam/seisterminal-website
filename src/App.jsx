@@ -2477,12 +2477,10 @@ function readLaunchCache() {
               </span>
               <input
                 type="text"
-                placeholder="Search contract address"
+                placeholder="Search name, symbol or contract"
                 value={tokenSearch}
                 onChange={(event) => {
-                  setTokenSearch(
-                    event.target.value
-                  );
+                  setTokenSearch(event.target.value);
                 }}
                 spellCheck="false"
                 autoComplete="off"
@@ -2653,23 +2651,41 @@ function readLaunchCache() {
             {!launchesLoading &&
               !launchesError &&
               liveLaunches
-                .filter((launch) => {
-                  const query =
-                    tokenSearch
-                      .trim()
-                      .toLowerCase();
-
-                  if (!query) {
-                    return true;
-                  }
-
-                  return (
-                    launch.tokenAddress &&
-                    launch.tokenAddress
-                      .toLowerCase()
-                      .includes(query)
-                  );
-                })
+              .filter((launch) => {
+                const query = tokenSearch
+                  .trim()
+                  .toLowerCase();
+              
+                if (!query) {
+                  return true;
+                }
+              
+                const tokenAddress = (
+                  launch.tokenAddress ||
+                  launch.token_address ||
+                  ""
+                ).toLowerCase();
+              
+                const tokenName = (
+                  launch.tokenName ||
+                  launch.token_name ||
+                  launch.name ||
+                  ""
+                ).toLowerCase();
+              
+                const tokenSymbol = (
+                  launch.tokenSymbol ||
+                  launch.token_symbol ||
+                  launch.symbol ||
+                  ""
+                ).toLowerCase();
+              
+                return (
+                  tokenAddress.includes(query) ||
+                  tokenName.includes(query) ||
+                  tokenSymbol.includes(query)
+                );
+              })
                 .map((launch) => {
                 const sold =
                   Number(
