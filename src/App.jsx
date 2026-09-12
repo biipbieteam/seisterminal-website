@@ -2424,7 +2424,15 @@ function readLaunchCache() {
             </div>
 
             <div className="market-ticker">
-              <div className="market-ticker-track">
+              <div
+                className="market-ticker-track"
+                style={{
+                  animationDuration: `${Math.max(
+                    24,
+                    tickerTokens.length * 1.7
+                  )}s`,
+                }}
+              >
 
                 {[...tickerTokens, ...tickerTokens].map(
                   (token, index) => (
