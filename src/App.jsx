@@ -473,7 +473,7 @@ function App() {
       );
     }
   };
-  
+
   const refreshTokenHolders =
   async (
     launch =
@@ -1075,66 +1075,66 @@ useEffect(() => {
   
       setLaunchSuccess(result);
   
-/*
- * --------------------------------------------------
- * 2. SAVE OFF-CHAIN METADATA
- * --------------------------------------------------
- *
- * On-chain launch has already succeeded.
- * Metadata failure must never turn into
- * "launch transaction failed".
- */
+      /*
+      * --------------------------------------------------
+      * 2. SAVE OFF-CHAIN METADATA
+      * --------------------------------------------------
+      *
+      * On-chain launch has already succeeded.
+      * Metadata failure must never turn into
+      * "launch transaction failed".
+      */
 
-try {
-  if (
-    result.launchId === null ||
-    result.launchId === undefined
-  ) {
-    throw new Error(
-      "Launch ID unavailable after confirmation."
-    );
-  }
+      try {
+        if (
+          result.launchId === null ||
+          result.launchId === undefined
+        ) {
+          throw new Error(
+            "Launch ID unavailable after confirmation."
+          );
+        }
 
-  if (!result.tokenAddress) {
-    throw new Error(
-      "Token address unavailable after confirmation."
-    );
-  }
+        if (!result.tokenAddress) {
+          throw new Error(
+            "Token address unavailable after confirmation."
+          );
+        }
 
-  if (!result.transactionHash) {
-    throw new Error(
-      "Transaction hash unavailable after confirmation."
-    );
-  }
+        if (!result.transactionHash) {
+          throw new Error(
+            "Transaction hash unavailable after confirmation."
+          );
+        }
 
-  await saveLaunchMetadata({
-    launchId:
-      result.launchId,
+        await saveLaunchMetadata({
+          launchId:
+            result.launchId,
 
-    tokenAddress:
-      result.tokenAddress,
+          tokenAddress:
+            result.tokenAddress,
 
-    creatorAddress:
-      result.creator,
+          creatorAddress:
+            result.creator,
 
-    tokenName:
-      result.name,
+          tokenName:
+            result.name,
 
-    tokenSymbol:
-      result.symbol,
+          tokenSymbol:
+            result.symbol,
 
-    transactionHash:
-      result.transactionHash,
+          transactionHash:
+            result.transactionHash,
 
-    logoFile:
-      tokenLogoFile,
-  });
-} catch (metadataError) {
-  console.error(
-    "Launch metadata save failed:",
-    metadataError
-  );
-}
+          logoFile:
+            tokenLogoFile,
+        });
+      } catch (metadataError) {
+        console.error(
+          "Launch metadata save failed:",
+          metadataError
+        );
+      }
   
       /*
        * --------------------------------------------------
@@ -2556,6 +2556,8 @@ function readLaunchCache() {
                           <img
                             src={token.logoUrl}
                             alt=""
+                            decoding="async"
+                            fetchPriority="low"
                           />
                         ) : (
                           <span>
@@ -2754,20 +2756,11 @@ function readLaunchCache() {
                     <div className="token-icon">
                     {launch.logoUrl ? (
                       <img
-                        src={launch.logoUrl}
-                        alt={`${launch.symbol} logo`}
                         className="token-icon-image"
+                        src={launch.logoUrl}
+                        alt=""
                         loading="lazy"
-                        onError={(event) => {
-                          event.currentTarget.style.display =
-                            "none";
-
-                          event.currentTarget
-                            .nextElementSibling
-                            ?.classList.remove(
-                              "token-icon-fallback-hidden"
-                            );
-                        }}
+                        decoding="async"
                       />
                     ) : null}
 
@@ -3469,7 +3462,8 @@ function readLaunchCache() {
                           {selectedLaunch.logoUrl ? (
                             <img
                               src={selectedLaunch.logoUrl}
-                              alt={`${selectedLaunch.symbol} logo`}
+                              alt=""
+                              decoding="async"
                             />
                           ) : (
                             <span>
