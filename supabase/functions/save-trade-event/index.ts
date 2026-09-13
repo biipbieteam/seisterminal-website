@@ -980,6 +980,41 @@ const supplyPercent =
                   `Launch state update failed: ${duplicateLaunchStateUpdateError.message}`
                 );
               }
+
+              const {
+                error:
+                  duplicateLastTradeUpdateError,
+              } =
+                await supabase
+                  .from(
+                    "launch_tokens"
+                  )
+                  .update({
+                    last_trade_at:
+                      blockTimestamp,
+                  })
+                  .eq(
+                    "chain_id",
+                    Number(
+                      ARC_CHAIN_ID
+                    )
+                  )
+                  .eq(
+                    "launch_id",
+                    launchId.toString()
+                  )
+                  .or(
+                    `last_trade_at.is.null,last_trade_at.lt.${blockTimestamp}`
+                  );
+              
+              
+              if (
+                duplicateLastTradeUpdateError
+              ) {
+                throw new Error(
+                  `Last trade timestamp update failed: ${duplicateLastTradeUpdateError.message}`
+                );
+              }
           
           
               const {
@@ -1154,6 +1189,41 @@ const supplyPercent =
           ) {
             throw new Error(
               `Launch state update failed: ${launchStateUpdateError.message}`
+            );
+          }
+
+          const {
+            error:
+              lastTradeUpdateError,
+          } =
+            await supabase
+              .from(
+                "launch_tokens"
+              )
+              .update({
+                last_trade_at:
+                  blockTimestamp,
+              })
+              .eq(
+                "chain_id",
+                Number(
+                  ARC_CHAIN_ID
+                )
+              )
+              .eq(
+                "launch_id",
+                launchId.toString()
+              )
+              .or(
+                `last_trade_at.is.null,last_trade_at.lt.${blockTimestamp}`
+              );
+          
+          
+          if (
+            lastTradeUpdateError
+          ) {
+            throw new Error(
+              `Last trade timestamp update failed: ${lastTradeUpdateError.message}`
             );
           }
           

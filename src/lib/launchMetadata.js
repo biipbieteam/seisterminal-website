@@ -87,6 +87,7 @@ import {
           logo_path,
           transaction_hash,
           created_at,
+          last_trade_at,
           status,
           total_supply,
           token_total_supply,
@@ -240,9 +241,15 @@ import {
           name:
             item.token_name,
   
-          symbol:
+            symbol:
             item.token_symbol,
-  
+          
+          createdAt:
+            item.created_at || null,
+          
+          lastTradeAt:
+            item.last_trade_at || null,
+          
           decimals,
   
           transactionCount,

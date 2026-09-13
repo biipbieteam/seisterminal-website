@@ -5431,6 +5431,23 @@ button {
     overscroll-behavior-x: none;
   }
 
+  
+}
+
+@media (min-width: 400px) and (max-width: 420px) {
+  .market-row {
+    grid-template-columns:
+      minmax(0, 1.55fr)
+      minmax(58px, 0.75fr)
+      38px
+      minmax(0, 0.9fr)
+      minmax(0, 0.8fr)
+      minmax(0, 0.6fr);
+  }
+
+  .market-row > span:nth-child(3) {
+    text-align: center;
+  }
 }
 
 .sidebar-brand-text {
@@ -5552,6 +5569,130 @@ button {
   }
 }
 
+
+.market-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.market-filter-button {
+  border: 1px solid rgba(92, 255, 112, 0.24);
+  background: rgba(0, 0, 0, 0.28);
+  color: rgba(160, 255, 170, 0.72);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 7px 11px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.market-filter-button:hover {
+  border-color: rgba(92, 255, 112, 0.55);
+  color: #8dff9c;
+}
+
+.market-filter-button.active {
+  border-color: #5cff70;
+  color: #5cff70;
+  background: rgba(92, 255, 112, 0.08);
+}
+
+
+.market-filter-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.market-filter-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+@keyframes marketRowEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.market-table > .market-row:not(.market-header) {
+  animation: marketRowEnter 220ms ease-out both;
+}
+
+.market-table > .market-row:nth-child(2) {
+  animation-delay: 0ms;
+}
+
+.market-table > .market-row:nth-child(3) {
+  animation-delay: 20ms;
+}
+
+.market-table > .market-row:nth-child(4) {
+  animation-delay: 40ms;
+}
+
+.market-table > .market-row:nth-child(5) {
+  animation-delay: 60ms;
+}
+
+.market-table > .market-row:nth-child(6) {
+  animation-delay: 80ms;
+}
+
+.market-table > .market-row:nth-child(n + 7) {
+  animation-delay: 100ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .market-table > .market-row:not(.market-header) {
+    animation: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .market-filter-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 5px;
+    width: 100%;
+  }
+
+  .market-filter-button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 6px 5px;
+    gap: 4px;
+
+    font-size: 8px;
+    letter-spacing: 0;
+    white-space: nowrap;
+
+    justify-content: center;
+  }
+
+  .market-filter-icon {
+    width: 11px;
+    height: 11px;
+    flex-shrink: 0;
+  }
+}
 
 
   

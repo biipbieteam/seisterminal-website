@@ -207,6 +207,11 @@ function App() {
   ] = useState("");
 
   const [
+    marketFilter,
+    setMarketFilter
+  ] = useState("");
+
+  const [
     activePage,
     setActivePage,
   ] = useState("MARKET");
@@ -2458,8 +2463,83 @@ function readLaunchCache() {
               </div>
             </section>
 
-        <section className="market">
-          <div className="market-toolbar">
+            <section className="market">
+
+            <div className="market-filter-bar">
+              <button
+                type="button"
+                className={
+                  marketFilter === "TOP_MCAP"
+                    ? "market-filter-button active"
+                    : "market-filter-button"
+                }
+                onClick={() => {
+                  setMarketFilter(
+                    marketFilter === "TOP_MCAP"
+                      ? ""
+                      : "TOP_MCAP"
+                  );
+                }}
+              >
+                <img
+                  className="market-filter-icon"
+                  src="/icon/topmarketcap.png"
+                  alt=""
+                  aria-hidden="true"
+                />
+                <span>TOP MARKET CAP</span>
+              </button>
+
+              <button
+                type="button"
+                className={
+                  marketFilter === "NEW_LAUNCH"
+                    ? "market-filter-button active"
+                    : "market-filter-button"
+                }
+                onClick={() => {
+                  setMarketFilter(
+                    marketFilter === "NEW_LAUNCH"
+                      ? ""
+                      : "NEW_LAUNCH"
+                  );
+                }}
+              >
+               <img
+                className="market-filter-icon"
+                src="/icon/newtoken.png"
+                alt=""
+                aria-hidden="true"
+              />
+              <span>NEW LAUNCH</span>
+              </button>
+
+              <button
+                type="button"
+                className={
+                  marketFilter === "LAST_TRADE"
+                    ? "market-filter-button active"
+                    : "market-filter-button"
+                }
+                onClick={() => {
+                  setMarketFilter(
+                    marketFilter === "LAST_TRADE"
+                      ? ""
+                      : "LAST_TRADE"
+                  );
+                }}
+              >
+                <img
+                  className="market-filter-icon"
+                  src="/icon/lasttrade.png"
+                  alt=""
+                  aria-hidden="true"
+                />
+                <span>LAST TRADE</span>
+              </button>
+            </div>
+
+            <div className="market-toolbar">
             <div className="search-box">
               <span className="search-icon">
                 <svg
@@ -2650,42 +2730,185 @@ function readLaunchCache() {
 
             {!launchesLoading &&
               !launchesError &&
-              liveLaunches
-              .filter((launch) => {
-                const query = tokenSearch
-                  .trim()
-                  .toLowerCase();
+              [...liveLaunches]
+                .filter((launch) => {
+                  const now =
+                    Date.now();
               
-                if (!query) {
+                  if (
+                    marketFilter ===
+                    "NEW_LAUNCH"
+                  ) {
+                    if (
+                      !launch.createdAt
+                    ) {
+                      return false;
+                    }
+              
+                    const createdTime =
+                      new Date(
+                        launch.createdAt
+                      ).getTime();
+              
+                    return (
+                      Number.isFinite(
+                        createdTime
+                      ) &&
+                      now - createdTime >= 0 &&
+                      now - createdTime <=
+                        10 * 60 * 60 * 1000
+                    );
+                  }
+              
+                  if (
+                    marketFilter ===
+                    "LAST_TRADE"
+                  ) {
+                    if (
+                      !launch.lastTradeAt
+                    ) {
+                      return false;
+                    }
+              
+                    const lastTradeTime =
+                      new Date(
+                        launch.lastTradeAt
+                      ).getTime();
+              
+                    return (
+                      Number.isFinite(
+                        lastTradeTime
+                      ) &&
+                      now - lastTradeTime >= 0 &&
+                      now - lastTradeTime <=
+                        6 * 60 * 60 * 1000
+                    );
+                  }
+              
                   return true;
-                }
+                })
+                .sort((a, b) => {
+                  if (
+                    marketFilter ===
+                    "NEW_LAUNCH"
+                  ) {
+                    return (
+                      new Date(
+                        b.createdAt
+                      ).getTime() -
+                      new Date(
+                        a.createdAt
+                      ).getTime()
+                    );
+                  }
               
-                const tokenAddress = (
-                  launch.tokenAddress ||
-                  launch.token_address ||
-                  ""
-                ).toLowerCase();
+                  if (
+                    marketFilter ===
+                    "LAST_TRADE"
+                  ) {
+                    return (
+                      new Date(
+                        b.lastTradeAt
+                      ).getTime() -
+                      new Date(
+                        a.lastTradeAt
+                      ).getTime()
+                    );
+                  }
               
-                const tokenName = (
-                  launch.tokenName ||
-                  launch.token_name ||
-                  launch.name ||
-                  ""
-                ).toLowerCase();
+                  if (
+                    marketFilter ===
+                    "TOP_MCAP"
+                  ) {
+                    const getMarketCap = (
+                      launch
+                    ) => {
+                      const sold =
+                        Number(
+                          launch.formatted
+                            .tokensSold
+                        );
               
-                const tokenSymbol = (
-                  launch.tokenSymbol ||
-                  launch.token_symbol ||
-                  launch.symbol ||
-                  ""
-                ).toLowerCase();
+                      const reserve =
+                        Number(
+                          launch.formatted
+                            .quoteReserve
+                        );
               
-                return (
-                  tokenAddress.includes(query) ||
-                  tokenName.includes(query) ||
-                  tokenSymbol.includes(query)
-                );
-              })
+                      const totalSupply =
+                        Number(
+                          launch.formatted
+                            .totalSupply
+                        );
+              
+                      const currentVirtualTokenReserve =
+                        1_200_000_000 -
+                        sold;
+              
+                      const currentVirtualQuoteReserve =
+                        12_000 +
+                        reserve;
+              
+                      const spotPrice =
+                        currentVirtualQuoteReserve /
+                        currentVirtualTokenReserve;
+              
+                      return (
+                        spotPrice *
+                        totalSupply
+                      );
+                    };
+              
+                    return (
+                      getMarketCap(b) -
+                      getMarketCap(a)
+                    );
+                  }
+              
+                  return 0;
+                })
+                .filter((launch) => {
+                  const query =
+                    tokenSearch
+                      .trim()
+                      .toLowerCase();
+              
+                  if (!query) {
+                    return true;
+                  }
+              
+                  const tokenAddress = (
+                    launch.tokenAddress ||
+                    launch.token_address ||
+                    ""
+                  ).toLowerCase();
+              
+                  const tokenName = (
+                    launch.tokenName ||
+                    launch.token_name ||
+                    launch.name ||
+                    ""
+                  ).toLowerCase();
+              
+                  const tokenSymbol = (
+                    launch.tokenSymbol ||
+                    launch.token_symbol ||
+                    launch.symbol ||
+                    ""
+                  ).toLowerCase();
+              
+                  return (
+                    tokenAddress.includes(
+                      query
+                    ) ||
+                    tokenName.includes(
+                      query
+                    ) ||
+                    tokenSymbol.includes(
+                      query
+                    )
+                  );
+                })
                 .map((launch) => {
                 const sold =
                   Number(
@@ -2747,7 +2970,7 @@ function readLaunchCache() {
                 return (
                   <div
                     className="market-row"
-                    key={launch.launchId.toString()}
+                    key={`${marketFilter || "DEFAULT"}-${launch.launchId.toString()}`}
                     role="button"
                     tabIndex={0}
                     onClick={() => {
