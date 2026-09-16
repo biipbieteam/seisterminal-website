@@ -41,6 +41,25 @@ import {
 } from "./lib/platformStats";
 import DocsPage from "./pages/DocsPage";
 import LitepaperPage from "./pages/LitepaperPage";
+
+import {
+  GENESIS_CONTRACT_ADDRESS,
+  getGenesisState,
+  getGenesisWalletState,
+} from "./contracts/genesisReader.js";
+
+import {
+  mintGenesisTeam,
+  mintGenesisOG,
+  mintGenesisFCFS,
+  mintGenesisPublic,
+} from "./contracts/genesisWriter.js";
+
+import {
+  getGenesisEligibility,
+  getGenesisWhitelistCounts,
+} from "./lib/genesisEligibility";
+
 import "./App.css";
 
 
@@ -173,6 +192,22 @@ function App() {
   };
 
   const [
+    genesisWhitelistCounts,
+    setGenesisWhitelistCounts
+  ] = useState({
+    og: null,
+    fcfs: null,
+  });
+  
+  const [
+    genesisCountOpen,
+    setGenesisCountOpen
+  ] = useState({
+    og: false,
+    fcfs: false,
+  });
+
+  const [
     tokenHolderCount,
     setTokenHolderCount,
   ] = useState(0);
@@ -221,6 +256,135 @@ function App() {
     setMobileSidebarOpen
   ] = useState(false);
 
+
+  const [genesisDropOpen, setGenesisDropOpen] = useState(false);
+
+  const [
+    genesisDropView,
+    setGenesisDropView
+  ] = useState("details");
+
+  const SHOW_GENESIS_DROP =
+    import.meta.env.VITE_ENABLE_GENESIS_DROP === "true";
+
+  const [genesisState, setGenesisState] =
+    useState(null);
+
+  const [
+      genesisWalletState,
+      setGenesisWalletState,
+    ] = useState({
+      ogMinted: 0,
+      fcfsMinted: 0,
+      publicMinted: 0,
+    });
+
+  
+  const [genesisLoading, setGenesisLoading] =
+    useState(false);
+  
+  const [genesisError, setGenesisError] =
+    useState("");
+  
+    const [
+      genesisInitialLoading,
+      setGenesisInitialLoading
+    ] = useState(false);
+
+    
+  const [
+    genesisNow, 
+    setGenesisNow
+  ] =
+    useState(
+      Math.floor(Date.now() / 1000)
+    );
+
+  const [
+    genesisMinting,
+    setGenesisMinting,
+  ] = useState(false);
+
+  const [
+    genesisMintQuantity,
+    setGenesisMintQuantity,
+  ] = useState(1);
+    
+  const [
+    genesisToast,
+    setGenesisToast,
+  ] = useState(null);
+
+  const [
+    genesisOgQuantity,
+    setGenesisOgQuantity,
+  ] = useState(1);
+    
+  const [
+    genesisFcfsQuantity,
+    setGenesisFcfsQuantity,
+  ] = useState(1);
+    
+  const [
+    genesisPublicQuantity,
+    setGenesisPublicQuantity,
+  ] = useState(1);
+
+  const [
+    genesisEligibility, 
+    setGenesisEligibility
+  ] =
+    useState({
+      og: false,
+      fcfs: false,
+    });
+  
+  const [
+    genesisProofs, 
+    setGenesisProofs
+  ] =
+    useState({
+      og: [],
+      fcfs: [],
+    });
+  
+  const [
+    genesisEligibilityLoading, 
+    setGenesisEligibilityLoading
+  ] =
+    useState(false);
+
+  const genesisOgRemaining =
+    Math.max(
+      0,
+      1 -
+        genesisWalletState.ogMinted
+    );
+  
+  const genesisFcfsRemaining =
+    Math.max(
+      0,
+      2 -
+        genesisWalletState.fcfsMinted
+    );
+  
+  const genesisPublicRemaining =
+    Math.max(
+      0,
+      2 -
+        genesisWalletState.publicMinted
+    );
+  
+  const genesisOgWalletMaxed =
+    genesisOgRemaining === 0;
+  
+  const genesisFcfsWalletMaxed =
+    genesisFcfsRemaining === 0;
+  
+  const genesisPublicWalletMaxed =
+    genesisPublicRemaining === 0;
+
+
   const {
     providers,
     selectedProvider,
@@ -229,8 +393,11 @@ function App() {
     address,
     chainId,
     isArcTestnet,
+    isArcMainnet,
     switchToArcTestnet,
     addArcTestnet,
+    switchToArcMainnet,
+    addArcMainnet,
     walletError,
     connectProvider,
     disconnectWallet,
@@ -477,6 +644,20 @@ function App() {
         false
       );
     }
+  };
+
+  const showGenesisToast = (
+    message,
+    type = "success"
+  ) => {
+    setGenesisToast({
+      message,
+      type,
+    });
+  
+    setTimeout(() => {
+      setGenesisToast(null);
+    }, 3500);
   };
 
   const refreshTokenHolders =
@@ -2233,6 +2414,1111 @@ function readLaunchCache() {
   }
 }
 
+const handleGenesisTeamMint =
+  async () => {
+    if (genesisMinting) {
+      return;
+    }
+
+    if (!connected || !address) {
+      console.warn(
+        "[GENESIS MINT] Wallet not connected"
+      );
+
+      return;
+    }
+
+    if (
+      !selectedProvider?.provider
+    ) {
+      console.warn(
+        "[GENESIS MINT] Selected wallet provider unavailable"
+      );
+    
+      return;
+    }
+
+    if (!genesisTeamLive) {
+      console.warn(
+        "[GENESIS MINT] Team mint is not live"
+      );
+
+      return;
+    }
+
+    if (!genesisTeamEligible) {
+      console.warn(
+        "[GENESIS MINT] Wallet is not Team owner"
+      );
+
+      return;
+    }
+
+    try {
+      setGenesisMinting(true);
+    
+      setGenesisToast({
+        status: "pending",
+        quantity: genesisMintQuantity,
+        txHash: null,
+      });
+    
+      console.log(
+        "[GENESIS MINT] Team mint starting..."
+      );
+    
+      const result =
+      await mintGenesisTeam({
+        eip1193Provider:
+          selectedProvider.provider,
+    
+        expectedAddress:
+          address,
+    
+        to:
+          address,
+    
+        quantity:
+          genesisMintQuantity,
+      });
+    
+      setGenesisState(
+        (prev) => {
+          if (!prev) {
+            return prev;
+          }
+    
+          return {
+            ...prev,
+    
+            totalSupply:
+              prev.totalSupply +
+              genesisMintQuantity,
+    
+            remainingSupply:
+              prev.remainingSupply -
+              genesisMintQuantity,
+          };
+        }
+      );
+    
+      const state =
+        await getGenesisState();
+    
+      setGenesisState(state);
+    
+      setGenesisToast({
+        status: "success",
+        quantity: genesisMintQuantity,
+        txHash: result.txHash,
+      });
+    
+      console.log(
+        "[GENESIS MINT] Team mint PASS"
+      );
+    
+    } catch (error) {
+      console.error(
+        "[GENESIS MINT ERROR]",
+        error
+      );
+    
+      setGenesisToast({
+        status: "error",
+        quantity: genesisMintQuantity,
+        txHash: null,
+        message:
+          error?.shortMessage ||
+          error?.message ||
+          "Mint failed.",
+      });
+    
+    } finally {
+      setGenesisMinting(false);
+    }
+};
+
+const handleGenesisOgMint =
+  async () => {
+    if (genesisMinting) {
+      return;
+    }
+
+    if (!connected || !address) {
+      console.warn(
+        "[GENESIS OG MINT] Wallet not connected"
+      );
+
+      return;
+    }
+
+    if (
+      !selectedProvider?.provider
+    ) {
+      console.warn(
+        "[GENESIS OG MINT] Selected wallet provider unavailable"
+      );
+
+      return;
+    }
+
+    if (!genesisOgLive) {
+      console.warn(
+        "[GENESIS OG MINT] OG mint is not live"
+      );
+
+      return;
+    }
+
+    if (!genesisOgEligible) {
+      console.warn(
+        "[GENESIS OG MINT] Wallet is not eligible"
+      );
+
+      return;
+    }
+
+    if (!genesisState) {
+      console.warn(
+        "[GENESIS OG MINT] Genesis state unavailable"
+      );
+
+      return;
+    }
+
+    if (
+      !Array.isArray(
+        genesisProofs.og
+      )
+    ) {
+      console.warn(
+        "[GENESIS OG MINT] OG proof unavailable"
+      );
+
+      return;
+    }
+
+    try {
+      setGenesisMinting(true);
+
+      setGenesisToast({
+        status: "pending",
+        quantity:
+          genesisOgQuantity,
+        txHash: null,
+      });
+
+      console.log(
+        "[GENESIS OG MINT] Starting..."
+      );
+
+      const result =
+        await mintGenesisOG({
+          eip1193Provider:
+            selectedProvider.provider,
+
+          expectedAddress:
+            address,
+
+          quantity:
+            genesisOgQuantity,
+
+          proof:
+            genesisProofs.og,
+
+          price:
+            genesisState.ogPriceRaw,
+        });
+
+      /*
+       * Optimistic supply update.
+       */
+      setGenesisState(
+        (prev) => {
+          if (!prev) {
+            return prev;
+          }
+
+          return {
+            ...prev,
+
+            totalSupply:
+              prev.totalSupply +
+              genesisOgQuantity,
+
+            remainingSupply:
+              prev.remainingSupply -
+              genesisOgQuantity,
+          };
+        }
+      );
+
+      /*
+       * Re-read authoritative
+       * contract state.
+       */
+      const state =
+        await getGenesisState();
+
+      setGenesisState(
+        state
+      );
+
+      setGenesisToast({
+        status: "success",
+        quantity:
+          genesisOgQuantity,
+        txHash:
+          result.txHash,
+      });
+
+      console.log(
+        "[GENESIS OG MINT] PASS"
+      );
+
+    } catch (error) {
+      console.error(
+        "[GENESIS OG MINT ERROR]",
+        error
+      );
+
+      setGenesisToast({
+        status: "error",
+        quantity:
+          genesisOgQuantity,
+        txHash: null,
+        message:
+          error?.shortMessage ||
+          error?.message ||
+          "OG mint failed.",
+      });
+
+    } finally {
+      setGenesisMinting(false);
+    }
+};
+
+
+const handleGenesisFcfsMint =
+  async () => {
+    if (genesisMinting) {
+      return;
+    }
+
+    if (!connected || !address) {
+      console.warn(
+        "[GENESIS FCFS MINT] Wallet not connected"
+      );
+
+      return;
+    }
+
+    if (
+      !selectedProvider?.provider
+    ) {
+      console.warn(
+        "[GENESIS FCFS MINT] Selected wallet provider unavailable"
+      );
+
+      return;
+    }
+
+    if (!genesisFcfsLive) {
+      console.warn(
+        "[GENESIS FCFS MINT] FCFS mint is not live"
+      );
+
+      return;
+    }
+
+    if (!genesisFcfsEligible) {
+      console.warn(
+        "[GENESIS FCFS MINT] Wallet is not eligible"
+      );
+
+      return;
+    }
+
+    if (!genesisState) {
+      console.warn(
+        "[GENESIS FCFS MINT] Genesis state unavailable"
+      );
+
+      return;
+    }
+
+    if (
+      !Array.isArray(
+        genesisProofs.fcfs
+      )
+    ) {
+      console.warn(
+        "[GENESIS FCFS MINT] FCFS proof unavailable"
+      );
+
+      return;
+    }
+
+    try {
+      setGenesisMinting(true);
+
+      setGenesisToast({
+        status: "pending",
+        quantity:
+          genesisFcfsQuantity,
+        txHash: null,
+      });
+
+      console.log(
+        "[GENESIS FCFS MINT] Starting..."
+      );
+
+      const result =
+        await mintGenesisFCFS({
+          eip1193Provider:
+            selectedProvider.provider,
+
+          expectedAddress:
+            address,
+
+          quantity:
+            genesisFcfsQuantity,
+
+          proof:
+            genesisProofs.fcfs,
+
+          price:
+            genesisState.fcfsPriceRaw,
+        });
+
+      /*
+       * Optimistic supply update.
+       */
+      setGenesisState(
+        (prev) => {
+          if (!prev) {
+            return prev;
+          }
+
+          return {
+            ...prev,
+
+            totalSupply:
+              prev.totalSupply +
+              genesisFcfsQuantity,
+
+            remainingSupply:
+              prev.remainingSupply -
+              genesisFcfsQuantity,
+          };
+        }
+      );
+
+      /*
+       * Re-read authoritative
+       * on-chain state.
+       */
+      const state =
+        await getGenesisState();
+
+      setGenesisState(
+        state
+      );
+
+      setGenesisToast({
+        status: "success",
+        quantity:
+          genesisFcfsQuantity,
+        txHash:
+          result.txHash,
+      });
+
+      console.log(
+        "[GENESIS FCFS MINT] PASS"
+      );
+
+    } catch (error) {
+      console.error(
+        "[GENESIS FCFS MINT ERROR]",
+        error
+      );
+
+      setGenesisToast({
+        status: "error",
+        quantity:
+          genesisFcfsQuantity,
+        txHash: null,
+        message:
+          error?.shortMessage ||
+          error?.message ||
+          "FCFS mint failed.",
+      });
+
+    } finally {
+      setGenesisMinting(false);
+    }
+};
+
+const handleGenesisPublicMint =
+  async () => {
+    if (genesisMinting) {
+      return;
+    }
+
+    if (!connected || !address) {
+      console.warn(
+        "[GENESIS PUBLIC MINT] Wallet not connected"
+      );
+
+      return;
+    }
+
+    if (
+      !selectedProvider?.provider
+    ) {
+      console.warn(
+        "[GENESIS PUBLIC MINT] Selected wallet provider unavailable"
+      );
+
+      return;
+    }
+
+    if (!genesisPublicLive) {
+      console.warn(
+        "[GENESIS PUBLIC MINT] Public mint is not live"
+      );
+
+      return;
+    }
+
+    if (!genesisState) {
+      console.warn(
+        "[GENESIS PUBLIC MINT] Genesis state unavailable"
+      );
+
+      return;
+    }
+
+    try {
+      setGenesisMinting(true);
+
+      setGenesisToast({
+        status: "pending",
+        quantity:
+          genesisPublicQuantity,
+        txHash: null,
+      });
+
+      console.log(
+        "[GENESIS PUBLIC MINT] Starting..."
+      );
+
+      const result =
+        await mintGenesisPublic({
+          eip1193Provider:
+            selectedProvider.provider,
+
+          expectedAddress:
+            address,
+
+          quantity:
+            genesisPublicQuantity,
+
+          price:
+            genesisState.publicPriceRaw,
+        });
+
+      /*
+       * Optimistic supply update.
+       */
+      setGenesisState(
+        (prev) => {
+          if (!prev) {
+            return prev;
+          }
+
+          return {
+            ...prev,
+
+            totalSupply:
+              prev.totalSupply +
+              genesisPublicQuantity,
+
+            remainingSupply:
+              prev.remainingSupply -
+              genesisPublicQuantity,
+          };
+        }
+      );
+
+      /*
+       * Re-read authoritative
+       * on-chain state.
+       */
+      const state =
+        await getGenesisState();
+
+      setGenesisState(
+        state
+      );
+
+      setGenesisToast({
+        status: "success",
+        quantity:
+          genesisPublicQuantity,
+        txHash:
+          result.txHash,
+      });
+
+      console.log(
+        "[GENESIS PUBLIC MINT] PASS"
+      );
+
+    } catch (error) {
+      console.error(
+        "[GENESIS PUBLIC MINT ERROR]",
+        error
+      );
+
+      setGenesisToast({
+        status: "error",
+        quantity:
+          genesisPublicQuantity,
+        txHash: null,
+        message:
+          error?.shortMessage ||
+          error?.message ||
+          "Public mint failed.",
+      });
+
+    } finally {
+      setGenesisMinting(false);
+    }
+};
+
+
+useEffect(() => {
+  if (!genesisDropOpen) {
+    return;
+  }
+
+  let cancelled = false;
+
+  const cacheKey =
+    `genesis-state:${GENESIS_CONTRACT_ADDRESS.toLowerCase()}`;
+
+  /*
+   * ---------------------------------------------------------
+   * 1. RESTORE CACHE IMMEDIATELY
+   * ---------------------------------------------------------
+   */
+
+  let hasCachedState = false;
+
+  try {
+    const cachedRaw =
+      localStorage.getItem(
+        cacheKey
+      );
+  
+    if (cachedRaw) {
+      const cached =
+        JSON.parse(
+          cachedRaw
+        );
+  
+      if (
+        cached?.state &&
+        !cancelled
+      ) {
+        hasCachedState = true;
+  
+        console.log(
+          "[GENESIS] cache restored:",
+          cached.state
+        );
+  
+        setGenesisState(
+          cached.state
+        );
+      }
+    }
+  } catch (error) {
+    console.warn(
+      "[GENESIS CACHE READ ERROR]",
+      error
+    );
+  }
+  
+  setGenesisInitialLoading(
+    !hasCachedState
+  );
+
+
+  /*
+   * ---------------------------------------------------------
+   * 2. REFRESH FROM BLOCKCHAIN IN BACKGROUND
+   * ---------------------------------------------------------
+   */
+
+  async function loadGenesisState() {
+    try {
+      setGenesisLoading(true);
+      setGenesisError("");
+
+      console.log(
+        "[GENESIS] refreshing contract state..."
+      );
+
+      const state =
+        await getGenesisState();
+
+      console.log(
+        "[GENESIS] state loaded:",
+        state
+      );
+
+      if (cancelled) {
+        return;
+      }
+
+      setGenesisState(
+        state
+      );
+
+
+      /*
+       * BigInt cannot be JSON.stringify'd.
+       *
+       * Raw price fields are BigInt,
+       * so convert them to strings only
+       * inside the cached copy.
+       */
+
+      const cacheState = {
+        ...state,
+
+        ogPriceRaw:
+          state.ogPriceRaw?.toString(),
+
+        fcfsPriceRaw:
+          state.fcfsPriceRaw?.toString(),
+
+        publicPriceRaw:
+          state.publicPriceRaw?.toString(),
+      };
+
+      localStorage.setItem(
+        cacheKey,
+        JSON.stringify({
+          savedAt:
+            Date.now(),
+
+          state:
+            cacheState,
+        })
+      );
+
+      console.log(
+        "[GENESIS] cache updated"
+      );
+    } catch (error) {
+      console.error(
+        "[GENESIS STATE ERROR]",
+        error
+      );
+
+      if (!cancelled) {
+        setGenesisError(
+          "FAILED TO REFRESH GENESIS DATA_"
+        );
+      }
+    } finally {
+      if (!cancelled) {
+        setGenesisLoading(false);
+        setGenesisInitialLoading(false);
+      }
+    }
+  }
+
+  loadGenesisState();
+
+  return () => {
+    cancelled = true;
+  };
+}, [genesisDropOpen]);
+
+
+  const genesisTeamEligible =
+    !!address &&
+    !!genesisState?.owner &&
+    address.toLowerCase() ===
+    genesisState.owner.toLowerCase();
+
+  const genesisOgEligible =
+    !!address &&
+    genesisEligibility.og === true;
+  
+  const genesisFcfsEligible =
+    !!address &&
+    genesisEligibility.fcfs === true;
+
+  const genesisTeamLive =
+    !!genesisState &&
+    genesisNow >=
+    genesisState.teamStart &&
+    genesisNow <
+    genesisState.teamEnd;
+
+  const genesisOgLive =
+    !!genesisState &&
+    genesisNow >= genesisState.ogStart &&
+    genesisNow < genesisState.ogEnd;
+
+  const genesisFcfsLive =
+    !!genesisState &&
+    genesisNow >= genesisState.fcfsStart &&
+    genesisNow < genesisState.fcfsEnd;
+
+  const genesisPublicLive =
+    !!genesisState &&
+    genesisNow >= genesisState.publicStart &&
+    genesisNow < genesisState.publicEnd;
+
+
+  const genesisFcfsInitialAllocationExhausted =
+    !!genesisState &&
+    genesisState.fcfsMintedSupply >=
+      genesisState.fcfsInitialSupply;
+  
+  const genesisFcfsRolloverPending =
+    genesisFcfsLive &&
+    genesisNow < genesisState.ogEnd &&
+    genesisFcfsInitialAllocationExhausted;
+
+
+  const genesisNextTarget =
+    genesisState &&
+    genesisNow < genesisState.teamStart
+      ? genesisState.teamStart
+      : 0;
+
+  const genesisCountdownSeconds =
+    genesisNextTarget > genesisNow
+      ? genesisNextTarget - genesisNow
+      : 0;
+
+    const genesisCountdownDays =
+      Math.floor(
+        genesisCountdownSeconds / 86400
+      );
+
+    const genesisCountdownHours =
+      Math.floor(
+        (
+          genesisCountdownSeconds % 86400
+        ) / 3600
+      );
+
+    const genesisCountdownMinutes =
+      Math.floor(
+        (
+          genesisCountdownSeconds % 3600
+        ) / 60
+      );
+
+    const genesisCountdownSecs =
+      genesisCountdownSeconds % 60;
+
+    const padGenesisCountdown = (
+      value
+    ) =>
+      String(value).padStart(
+        2,
+        "0"
+      );
+
+  const formatGenesisTime = (
+    timestamp
+  ) => {
+    if (!timestamp) {
+      return "—";
+    }
+  
+    return new Date(
+      timestamp * 1000
+    ).toLocaleString(
+      undefined,
+      {
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        timeZoneName: "short",
+      }
+    );
+  };
+
+
+  useEffect(() => {
+    if (!genesisDropOpen) {
+      return;
+    }
+  
+    const updateNow = () => {
+      setGenesisNow(
+        Math.floor(Date.now() / 1000)
+      );
+    };
+  
+    updateNow();
+  
+    const timer =
+      setInterval(
+        updateNow,
+        1000
+      );
+  
+    return () => {
+      clearInterval(timer);
+    };
+  }, [genesisDropOpen]);
+
+  useEffect(() => {
+    let cancelled = false;
+  
+    async function loadGenesisEligibility() {
+      if (!genesisDropOpen || !address) {
+        setGenesisEligibility({
+          og: false,
+          fcfs: false,
+        });
+  
+        setGenesisProofs({
+          og: [],
+          fcfs: [],
+        });
+  
+        setGenesisEligibilityLoading(false);
+  
+        return;
+      }
+  
+      setGenesisEligibilityLoading(true);
+  
+      try {
+        const result =
+          await getGenesisEligibility(
+            address
+          );
+  
+        if (cancelled) return;
+  
+        setGenesisEligibility({
+          og:
+            result.ogEligible === true,
+  
+          fcfs:
+            result.fcfsEligible === true,
+        });
+  
+        setGenesisProofs({
+          og:
+            Array.isArray(result.ogProof)
+              ? result.ogProof
+              : [],
+  
+          fcfs:
+            Array.isArray(result.fcfsProof)
+              ? result.fcfsProof
+              : [],
+        });
+  
+        console.log(
+          "[GENESIS ELIGIBILITY]",
+          {
+            address:
+              address.toLowerCase(),
+  
+            ogEligible:
+              result.ogEligible,
+  
+            fcfsEligible:
+              result.fcfsEligible,
+  
+            ogProofLength:
+              Array.isArray(result.ogProof)
+                ? result.ogProof.length
+                : 0,
+  
+            fcfsProofLength:
+              Array.isArray(result.fcfsProof)
+                ? result.fcfsProof.length
+                : 0,
+          }
+        );
+      } catch (error) {
+        console.error(
+          "[GENESIS ELIGIBILITY]",
+          error
+        );
+  
+        if (!cancelled) {
+          setGenesisEligibility({
+            og: false,
+            fcfs: false,
+          });
+  
+          setGenesisProofs({
+            og: [],
+            fcfs: [],
+          });
+        }
+      } finally {
+        if (!cancelled) {
+          setGenesisEligibilityLoading(false);
+        }
+      }
+    }
+  
+    loadGenesisEligibility();
+  
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    genesisDropOpen,
+    address,
+  ]);
+
+  const renderGenesisEligibilityBadge = (
+    eligible
+  ) => {
+    if (!address) {
+      return (
+        <span className="genesis-eligibility-badge disconnected">
+          CONNECT WALLET
+        </span>
+      );
+    }
+  
+    if (genesisEligibilityLoading) {
+      return (
+        <span className="genesis-eligibility-badge checking">
+          CHECKING...
+        </span>
+      );
+    }
+  
+    return (
+      <span
+        className={
+          eligible
+            ? "genesis-eligibility-badge eligible"
+            : "genesis-eligibility-badge ineligible"
+        }
+      >
+        {eligible
+          ? "ELIGIBLE"
+          : "NOT ELIGIBLE"}
+      </span>
+    );
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+  
+    async function loadGenesisWalletState() {
+      if (
+        !connected ||
+        !address
+      ) {
+        setGenesisWalletState({
+          ogMinted: 0,
+          fcfsMinted: 0,
+          publicMinted: 0,
+        });
+  
+        return;
+      }
+  
+      try {
+        const walletState =
+          await getGenesisWalletState(
+            address
+          );
+  
+        if (cancelled) {
+          return;
+        }
+  
+        setGenesisWalletState(
+          walletState
+        );
+  
+        console.log(
+          "[GENESIS WALLET STATE]",
+          walletState
+        );
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+  
+        console.error(
+          "[GENESIS WALLET STATE ERROR]",
+          error
+        );
+      }
+    }
+  
+    loadGenesisWalletState();
+  
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    connected,
+    address,
+    genesisState?.totalSupply,
+  ]);
+
+
+useEffect(() => {
+  if (!genesisDropOpen) {
+    return;
+  }
+
+  let cancelled = false;
+
+  async function loadWhitelistCounts() {
+    try {
+      const counts =
+        await getGenesisWhitelistCounts();
+
+      if (cancelled) {
+        return;
+      }
+
+      setGenesisWhitelistCounts(
+        counts
+      );
+    } catch (error) {
+      console.error(
+        "[GENESIS WHITELIST COUNT ERROR]",
+        error
+      );
+    }
+  }
+
+  loadWhitelistCounts();
+
+  return () => {
+    cancelled = true;
+  };
+}, [genesisDropOpen]);
+
+
 
   return (
     <div className="terminal-app">
@@ -2372,6 +3658,18 @@ function readLaunchCache() {
           </nav>
 
         <div className="sidebar-bottom">
+
+            <button
+              type="button"
+              className="genesis-drop-btn"
+              onClick={() => {
+                setGenesisDropView("details");
+                setGenesisDropOpen(true);
+              }}
+            >
+              GENESIS DROP_
+            </button>
+            
           <button
             type="button"
             className="sidebar-launch-button"
@@ -3594,27 +4892,17 @@ function readLaunchCache() {
                       </div>
 
                       <div className="account-info-block">
-                        <span>ADDRESS</span>
-
-                        <strong>
-                          {address.slice(0, 10)}
-                          ...
-                          {address.slice(-8)}
-                        </strong>
-                      </div>
-
-                      <div className="account-info-block">
                       <span>NETWORK</span>
 
                       <strong
                         className={
-                          isArcTestnet
+                          isArcMainnet
                             ? "network-status network-correct"
                             : "network-status network-wrong"
                         }
                       >
-                        {isArcTestnet
-                          ? "● ARC TESTNET"
+                        {isArcMainnet
+                          ? "● ARC MAINNET"
                           : "● WRONG NETWORK"}
                       </strong>
 
@@ -3624,39 +4912,39 @@ function readLaunchCache() {
                           ? parseInt(chainId, 16)
                           : "—"}
                       </small>
-                      </div>
+                    </div>
 
-                      {!isArcTestnet && !arcNetworkNeedsAdd && (
-                        <button
-                          className="account-switch-button"
-                          onClick={async () => {
-                            const result =
-                              await switchToArcTestnet();
+                    {!isArcMainnet && !arcNetworkNeedsAdd && (
+                      <button
+                        className="account-switch-button"
+                        onClick={async () => {
+                          const result =
+                            await switchToArcMainnet();
 
-                            if (result.needsAdd) {
-                              setArcNetworkNeedsAdd(true);
-                            }
-                          }}
-                        >
-                          SWITCH TO ARC
-                        </button>
-                      )}
+                          if (result.needsAdd) {
+                            setArcNetworkNeedsAdd(true);
+                          }
+                        }}
+                      >
+                        SWITCH TO ARC MAINNET
+                      </button>
+                    )}
 
-                      {!isArcTestnet && arcNetworkNeedsAdd && (
-                        <button
-                          className="account-switch-button"
-                          onClick={async () => {
-                            const success =
-                              await addArcTestnet();
+                    {!isArcMainnet && arcNetworkNeedsAdd && (
+                      <button
+                        className="account-switch-button"
+                        onClick={async () => {
+                          const success =
+                            await addArcMainnet();
 
-                            if (success) {
-                              setArcNetworkNeedsAdd(false);
-                            }
-                          }}
-                        >
-                          ADD ARC TESTNET
-                        </button>
-                      )}
+                          if (success) {
+                            setArcNetworkNeedsAdd(false);
+                          }
+                        }}
+                      >
+                        ADD ARC MAINNET
+                      </button>
+                    )}
 
                       <button
                         className="account-copy-button"
@@ -4469,6 +5757,1106 @@ function readLaunchCache() {
                 </div>
               )}
           </div>
+
+          {genesisDropOpen && (
+                <div
+                  className="genesis-drop-overlay"
+                  onClick={() => setGenesisDropOpen(false)}
+                >
+                  <div
+                    className="genesis-drop-modal"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      type="button"
+                      className="genesis-drop-close"
+                      onClick={() => setGenesisDropOpen(false)}
+                      aria-label="Close Genesis Drop"
+                    >
+                      ×
+                    </button>
+
+                    {genesisDropView === "details" ? (
+                      <div className="genesis-details">
+
+                        {genesisDropView === "details" && (
+                          <div className="genesis-details">
+
+                            <div className="genesis-details-heading">
+                              <span className="genesis-details-kicker">
+                                &gt; GENESIS_MINT_DETAILS
+                              </span>
+
+                              <h2>
+                                ARC TERMINAL GENESIS
+                              </h2>
+
+                              <p>
+                                The Arc Terminal Genesis collection consists of
+                                5,555 terminal-inspired pixel art NFTs on Arc,
+                                forming part of the broader ecosystem that includes
+                                SEIS TERMINAL Launchpad, DEX Trading, and more.
+                              </p>
+                            </div>
+
+
+                            <div className="genesis-details-total">
+                              <span>MAX SUPPLY</span>
+                              <strong>5555</strong>
+                            </div>
+
+
+                            <div className="genesis-details-grid">
+
+                              <div className="genesis-details-phase">
+                                <div className="genesis-details-phase-head">
+                                  <strong>TEAM</strong>
+                                  <span>55 NFT</span>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>PRICE</span>
+                                  <strong>FREE</strong>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>WALLET LIMIT</span>
+                                  <strong>55</strong>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>START</span>
+                                  <strong>
+                                    {genesisState
+                                      ? formatGenesisTime(genesisState.teamStart)
+                                      : "LOADING_"}
+                                  </strong>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>END</span>
+                                  <strong>
+                                    {genesisState
+                                      ? formatGenesisTime(genesisState.teamEnd)
+                                      : "LOADING_"}
+                                  </strong>
+                                </div>
+                              </div>
+
+
+                              <div className="genesis-details-phase">
+                                <div className="genesis-details-phase-head">
+                                  <strong>OG (GTD)</strong>
+                                  <span>3200 NFT</span>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>PRICE</span>
+                                  <strong>FREE</strong>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>WALLET LIMIT</span>
+                                  <strong>1 NFT</strong>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>START</span>
+                                  <strong>
+                                    {genesisState
+                                      ? formatGenesisTime(genesisState.ogStart)
+                                      : "LOADING_"}
+                                  </strong>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>END</span>
+                                  <strong>
+                                    {genesisState
+                                      ? formatGenesisTime(genesisState.ogEnd)
+                                      : "LOADING_"}
+                                  </strong>
+                                </div>
+                              </div>
+
+
+                              <div className="genesis-details-phase">
+                                <div className="genesis-details-phase-head">
+                                  <strong>FCFS</strong>
+                                  <span>2000 NFT</span>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>PRICE</span>
+                                  <strong>5.55 USDC</strong>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>WALLET LIMIT</span>
+                                  <strong>2 NFT</strong>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>START</span>
+                                  <strong>
+                                    {genesisState
+                                      ? formatGenesisTime(genesisState.fcfsStart)
+                                      : "LOADING_"}
+                                  </strong>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>END</span>
+                                  <strong>
+                                    {genesisState
+                                      ? formatGenesisTime(genesisState.fcfsEnd)
+                                      : "LOADING_"}
+                                  </strong>
+                                </div>
+                              </div>
+
+
+                              <div className="genesis-details-phase">
+                                <div className="genesis-details-phase-head">
+                                  <strong>PUBLIC</strong>
+                                  <span>300 NFT</span>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>PRICE</span>
+                                  <strong>8.55 USDC</strong>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>WALLET LIMIT</span>
+                                  <strong>2 NFT</strong>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>START</span>
+                                  <strong>
+                                    {genesisState
+                                      ? formatGenesisTime(genesisState.publicStart)
+                                      : "LOADING_"}
+                                  </strong>
+                                </div>
+
+                                <div className="genesis-details-line">
+                                  <span>END</span>
+                                  <strong>
+                                    {genesisState
+                                      ? formatGenesisTime(genesisState.publicEnd)
+                                      : "LOADING_"}
+                                  </strong>
+                                </div>
+                              </div>
+
+                            </div>
+
+
+                            <div className="genesis-details-note">
+                              <span>&gt; MINT_INFO_</span>
+
+                              <p>
+                                OG (GTD) and FCFS begin at the same time.
+                                FCFS initially has an allocation of 2,000 NFTs.
+                                If the OG allocation is not fully minted before the OG phase ends,
+                                the remaining unminted OG supply will roll over to FCFS.
+                                The rollover becomes available only after the OG phase has ended
+                                and while the FCFS phase remains active.
+                              </p>
+                            </div>
+
+
+                            <button
+                              type="button"
+                              className="genesis-details-enter"
+                              onClick={() =>
+                                setGenesisDropView("mint")
+                              }
+                            >
+                              ENTER GENESIS MINT_
+                            </button>
+
+                          </div>
+                        )}
+
+                      </div>
+
+                    ) : (
+
+                    <div className="genesis-drop-content">
+                      {/* =========================================================
+                          COLLECTION HEADER
+                          ========================================================= */}
+
+                      <div className="genesis-collection-header">
+
+                        <div className="genesis-collection-banner">
+                          <img
+                            src="/bannergenesis.png"
+                            alt="Genesis Banner"
+                            className="genesis-banner-image"
+                          />
+                        </div>
+
+                        <div className="genesis-collection-info">
+
+                          <div className="genesis-collection-logo">
+                            <img
+                              src="/logogenesis.png"
+                              alt="Genesis Logo"
+                              className="genesis-logo-image"
+                            />
+                          </div>
+
+                          <div className="genesis-collection-meta">
+
+                            <div className="genesis-collection-title-row">
+
+                            <div>
+                              <div className="genesis-collection-name-row">
+                                <h2 className="genesis-collection-title">
+                                  GENESIS
+                                </h2>
+                              </div>
+
+                              <span className="genesis-collection-subtitle">
+                                ARC TERMINAL
+                              </span>
+
+                              <a
+                                  href={`https://explorer.arc.io/address/${GENESIS_CONTRACT_ADDRESS}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="genesis-contract-address"
+                                  title="View contract on Arc Explorer"
+                                >
+                                  {GENESIS_CONTRACT_ADDRESS}
+                                </a>
+                            </div>
+
+                              <div className="genesis-social-links">
+
+                                <a
+                                  href="https://www.arcterminal.space/#home"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="genesis-social-link"
+                                  aria-label="ARC TERMINAL Website"
+                                >
+                                  <img
+                                    src="/icon/website.png"
+                                    alt=""
+                                    className="genesis-social-icon"
+                                  />
+                                </a>
+
+                                <a
+                                  href="https://x.com/ArcTerminalss"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="genesis-social-link"
+                                  aria-label="ARC TERMINAL on X"
+                                >
+                                  <img
+                                    src="/icon/x.png"
+                                    alt=""
+                                    className="genesis-social-icon"
+                                  />
+                                </a>
+
+                                <a
+                                  href="https://discord.gg/arcterminal"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="genesis-social-link"
+                                  aria-label="ARC TERMINAL Discord"
+                                >
+                                  <img
+                                    src="/icon/discord.png"
+                                    alt=""
+                                    className="genesis-social-icon genesis-social-icon-discord"
+                                  />
+                                </a>
+
+                                </div>
+
+                            </div>
+
+                          </div>
+
+                        </div>
+
+                      </div>
+
+
+                      {/* ========================================================= 
+                          AVAILABLE ITEMS 
+                          ========================================================= */}
+
+                      <div className="genesis-available-section">
+                        {genesisNextTarget > 0 && (
+                          <div className="genesis-countdown-row">
+
+                            <div className="genesis-countdown">
+
+                              <div className="genesis-countdown-unit">
+                                <div
+                                  className="genesis-countdown-number"
+                                  key={`d-${genesisCountdownDays}`}
+                                >
+                                  {padGenesisCountdown(
+                                    genesisCountdownDays
+                                  )}
+                                </div>
+
+                                <span>DAYS</span>
+                              </div>
+
+                              <div className="genesis-countdown-separator">
+                                :
+                              </div>
+
+                              <div className="genesis-countdown-unit">
+                                <div
+                                  className="genesis-countdown-number"
+                                  key={`h-${genesisCountdownHours}`}
+                                >
+                                  {padGenesisCountdown(
+                                    genesisCountdownHours
+                                  )}
+                                </div>
+
+                                <span>HOURS</span>
+                              </div>
+
+                              <div className="genesis-countdown-separator">
+                                :
+                              </div>
+
+                              <div className="genesis-countdown-unit">
+                                <div
+                                  className="genesis-countdown-number"
+                                  key={`m-${genesisCountdownMinutes}`}
+                                >
+                                  {padGenesisCountdown(
+                                    genesisCountdownMinutes
+                                  )}
+                                </div>
+
+                                <span>MINS</span>
+                              </div>
+
+                              <div className="genesis-countdown-separator">
+                                :
+                              </div>
+
+                              <div className="genesis-countdown-unit">
+                                <div
+                                  className="genesis-countdown-number"
+                                  key={`s-${genesisCountdownSecs}`}
+                                >
+                                  {padGenesisCountdown(
+                                    genesisCountdownSecs
+                                  )}
+                                </div>
+
+                                <span>SECS</span>
+                              </div>
+
+                            </div>
+
+                          </div>
+                        )}
+
+                        <div className="genesis-available-row">
+                          <span>
+                            AVAILABLE ITEMS
+                          </span>
+
+                          <strong>
+                            {genesisState
+                              ? `${genesisState.totalSupply} / ${genesisState.maxSupply}`
+                              : "0 / 5555"}
+                          </strong>
+                        </div>
+
+                        <div className="genesis-supply-track">
+                          <div
+                            className="genesis-supply-fill"
+                            style={{
+                              width: genesisState
+                                ? `${
+                                    (
+                                      genesisState.totalSupply /
+                                      genesisState.maxSupply
+                                    ) * 100
+                                  }%`
+                                : "0%",
+                            }}
+                          />
+                        </div>
+                      </div>
+
+
+                      {/* =========================================================
+                          ARTWORK PREVIEW
+                          ========================================================= */}
+
+                      <div className="genesis-art-grid">
+
+                        <div className="genesis-art-card">
+                          <img
+                            src="/preview/previewa.png"
+                            alt="Genesis preview 01"
+                            className="genesis-art-image"
+                          />
+                        </div>
+
+                        <div className="genesis-art-card">
+                          <img
+                            src="/preview/previewb.png"
+                            alt="Genesis preview 02"
+                            className="genesis-art-image"
+                          />
+                        </div>
+
+                        <div className="genesis-art-card">
+                          <img
+                            src="/preview/previewc.png"
+                            alt="Genesis preview 03"
+                            className="genesis-art-image"
+                          />
+                        </div>
+
+                        <div className="genesis-art-card">
+                          <img
+                            src="/preview/previewd.png"
+                            alt="Genesis preview 04"
+                            className="genesis-art-image"
+                          />
+                        </div>
+
+                      </div>
+
+                      {/* =========================================================
+                          GENESIS PHASES
+                          ========================================================= */}
+
+                      <div className="genesis-phase-grid">
+
+                      {/* =======================================================
+                          TEAM
+                          ======================================================= */}
+
+                      <section className="genesis-phase-card">
+
+                        <span
+                          className={
+                            genesisTeamLive
+                              ? "genesis-live-badge genesis-live-badge-active"
+                              : "genesis-live-badge"
+                          }
+                        >
+                          {genesisTeamLive
+                            ? "LIVE"
+                            : "NOT LIVE"}
+                        </span>
+
+                        <div className="genesis-phase-card-copy">
+
+                          <div className="genesis-phase-card-title-row">
+                            <h3>TEAM</h3>
+                          </div>
+
+                          <span className="genesis-phase-date">
+                            Starts:{" "}
+                            {genesisState
+                              ? formatGenesisTime(
+                                  genesisState.teamStart
+                                )
+                              : "—"}
+                          </span>
+
+                          <span className="genesis-phase-date">
+                            Ends:{" "}
+                            {genesisState
+                              ? formatGenesisTime(
+                                  genesisState.teamEnd
+                                )
+                              : "—"}
+                          </span>
+
+                          <code>
+                            FREE
+                          </code>
+
+                        </div>
+
+                        <div className="genesis-phase-card-actions">
+
+                          <div className="genesis-mint-quantity">
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setGenesisMintQuantity(
+                                  (prev) =>
+                                    Math.max(
+                                      1,
+                                      prev - 1
+                                    )
+                                )
+                              }
+                              disabled={
+                                genesisMinting ||
+                                genesisMintQuantity <= 1
+                              }
+                            >
+                              −
+                            </button>
+
+                            <span>
+                              {genesisMintQuantity}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setGenesisMintQuantity(
+                                  (prev) =>
+                                    Math.min(
+                                      55,
+                                      prev + 1
+                                    )
+                                )
+                              }
+                              disabled={
+                                genesisMinting ||
+                                genesisMintQuantity >= 55
+                              }
+                            >
+                              +
+                            </button>
+
+                          </div>
+
+                          <button
+                            type="button"
+                            className={`genesis-phase-action ${
+                              genesisTeamLive &&
+                              genesisTeamEligible
+                                ? "genesis-phase-action-live"
+                                : genesisTeamLive &&
+                                    !genesisTeamEligible
+                                  ? "genesis-phase-action-ineligible"
+                                  : genesisState &&
+                                      genesisNow >=
+                                        genesisState.teamEnd
+                                    ? "genesis-phase-action-ended"
+                                    : "genesis-phase-action-upcoming"
+                            }`}
+                            onClick={
+                              handleGenesisTeamMint
+                            }
+                            disabled={
+                              genesisMinting ||
+                              !connected ||
+                              !genesisTeamLive ||
+                              !genesisTeamEligible
+                            }
+                          >
+                            {genesisMinting
+                              ? "MINTING..."
+                              : !connected
+                                ? "CONNECT WALLET"
+                                : genesisTeamLive
+                                  ? genesisTeamEligible
+                                    ? "MINT"
+                                    : "NOT ELIGIBLE"
+                                  : genesisState &&
+                                      genesisNow >=
+                                        genesisState.teamEnd
+                                    ? "ENDED"
+                                    : "UPCOMING"}
+                          </button>
+
+                          </div>
+
+                      </section>
+
+
+                      {/* =======================================================
+                          OG
+                          ======================================================= */}
+
+                      <section className="genesis-phase-card">
+                        <span
+                          className={`genesis-eligibility-badge ${
+                            genesisOgEligible
+                              ? "genesis-eligibility-badge-eligible"
+                              : "genesis-eligibility-badge-ineligible"
+                          }`}
+                        >
+                          {genesisOgEligible
+                            ? "ELIGIBLE"
+                            : "NOT ELIGIBLE"}
+                        </span>
+                        <span
+                          className={
+                            genesisOgLive
+                              ? "genesis-live-badge genesis-live-badge-active"
+                              : "genesis-live-badge"
+                          }
+                        >
+                          {genesisOgLive
+                            ? "LIVE"
+                            : "NOT LIVE"}
+                        </span>
+
+                        <div className="genesis-phase-card-copy">
+
+                          <div className="genesis-phase-card-title-row">
+                            <h3>OG (GTD)</h3>
+
+                            <button
+                              type="button"
+                              className="genesis-address-count-button"
+                              onClick={() =>
+                                setGenesisCountOpen(
+                                  (prev) => ({
+                                    ...prev,
+                                    og: !prev.og,
+                                  })
+                                )
+                              }
+                            >
+                              {genesisCountOpen.og
+                                ? `[${genesisWhitelistCounts.og ?? "—"}]`
+                                : "[ADDRESS]"}
+                            </button>
+                          </div>
+
+                          <span className="genesis-phase-date">
+                            Starts:{" "}
+                            {genesisState
+                              ? formatGenesisTime(
+                                  genesisState.ogStart
+                                )
+                              : "—"}
+                          </span>
+
+                          <span className="genesis-phase-date">
+                            Ends:{" "}
+                            {genesisState
+                              ? formatGenesisTime(
+                                  genesisState.ogEnd
+                                )
+                              : "—"}
+                          </span>
+
+                          <code>
+                            FREE | LIMIT 1 PER WALLET
+                          </code>
+
+                        </div>
+
+                        <div className="genesis-phase-card-actions">
+
+                          <div className="genesis-mint-quantity">
+                            <button
+                              type="button"
+                              disabled
+                            >
+                              −
+                            </button>
+
+                            <span>
+                              {genesisOgQuantity}
+                            </span>
+
+                            <button
+                              type="button"
+                              disabled
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          <button
+                            type="button"
+                            className={`genesis-phase-action ${
+                              genesisOgLive && genesisOgEligible
+                                ? "genesis-phase-action-live"
+                                : genesisOgLive && !genesisOgEligible
+                                  ? "genesis-phase-action-ineligible"
+                                  : genesisState &&
+                                      genesisNow >= genesisState.ogEnd
+                                    ? "genesis-phase-action-ended"
+                                    : "genesis-phase-action-upcoming"
+                            }`}
+                            onClick={
+                              handleGenesisOgMint
+                            }
+                            disabled={
+                              genesisMinting ||
+                              !connected ||
+                              !genesisOgLive ||
+                              !genesisOgEligible ||
+                              genesisOgWalletMaxed
+                            }
+                          >
+                          {genesisMinting
+                            ? "MINTING..."
+                            : !connected
+                              ? "CONNECT WALLET"
+                              : genesisOgWalletMaxed
+                                ? "MINT LIMIT REACHED"
+                                : genesisOgLive
+                                  ? genesisOgEligible
+                                    ? "MINT"
+                                    : "NOT ELIGIBLE"
+                                  : genesisState &&
+                                      genesisNow >=
+                                        genesisState.ogEnd
+                                    ? "ENDED"
+                                    : "UPCOMING"}
+                          </button>
+                        </div>
+                      </section>
+
+
+                      {/* =======================================================
+                          FCFS
+                          ======================================================= */}
+
+                      <section className="genesis-phase-card">
+                        <span
+                          className={`genesis-eligibility-badge ${
+                            genesisFcfsEligible
+                              ? "genesis-eligibility-badge-eligible"
+                              : "genesis-eligibility-badge-ineligible"
+                          }`}
+                        >
+                          {genesisFcfsEligible
+                            ? "ELIGIBLE"
+                            : "NOT ELIGIBLE"}
+                        </span>
+                        <span
+                          className={
+                            genesisFcfsLive
+                              ? "genesis-live-badge genesis-live-badge-active"
+                              : "genesis-live-badge"
+                          }
+                        >
+                          {genesisFcfsLive
+                            ? "LIVE"
+                            : "NOT LIVE"}
+                        </span>
+
+                        <div className="genesis-phase-card-copy">
+
+                          <div className="genesis-phase-card-title-row">
+                            <h3>FCFS</h3>
+
+                            <button
+                              type="button"
+                              className="genesis-address-count-button"
+                              onClick={() =>
+                                setGenesisCountOpen(
+                                  (prev) => ({
+                                    ...prev,
+                                    fcfs: !prev.fcfs,
+                                  })
+                                )
+                              }
+                            >
+                              {genesisCountOpen.fcfs
+                                ? `[${genesisWhitelistCounts.fcfs ?? "—"}]`
+                                : "[ADDRESS]"}
+                            </button>
+                          </div>
+
+                          <span className="genesis-phase-date">
+                            Starts:{" "}
+                            {genesisState
+                              ? formatGenesisTime(
+                                  genesisState.fcfsStart
+                                )
+                              : "—"}
+                          </span>
+
+                          <span className="genesis-phase-date">
+                            Ends:{" "}
+                            {genesisState
+                              ? formatGenesisTime(
+                                  genesisState.fcfsEnd
+                                )
+                              : "—"}
+                          </span>
+
+                          <code>
+                            {genesisState
+                              ? `${genesisState.fcfsPrice} USDC`
+                              : "— USDC"}{" "}
+                            | LIMIT 2 PER WALLET
+                          </code>
+
+                        </div>
+
+                        <div className="genesis-phase-card-actions">
+                          
+                          <div className="genesis-mint-quantity">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setGenesisFcfsQuantity(
+                                  (prev) =>
+                                    Math.max(
+                                      1,
+                                      prev - 1
+                                    )
+                                )
+                              }
+                              disabled={
+                                genesisMinting ||
+                                genesisFcfsWalletMaxed ||
+                                genesisFcfsQuantity <= 1
+                              }
+                            >
+                              −
+                            </button>
+
+                            <span>
+                              {genesisFcfsQuantity}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setGenesisFcfsQuantity(
+                                  (prev) =>
+                                    Math.min(
+                                      genesisFcfsRemaining,
+                                      prev + 1
+                                    )
+                                )
+                              }
+                              disabled={
+                                genesisMinting ||
+                                genesisFcfsWalletMaxed ||
+                                genesisFcfsQuantity >=
+                                  genesisFcfsRemaining
+                              }
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          <button
+                            type="button"
+                            className={`genesis-phase-action ${
+                              genesisFcfsWalletMaxed
+                                ? "genesis-phase-action-ended"
+                                : genesisFcfsRolloverPending
+                                  ? "genesis-phase-action-upcoming"
+                                  : genesisFcfsLive &&
+                                      genesisFcfsEligible
+                                    ? "genesis-phase-action-live"
+                                    : genesisFcfsLive &&
+                                        !genesisFcfsEligible
+                                      ? "genesis-phase-action-ineligible"
+                                      : genesisState &&
+                                          genesisNow >=
+                                            genesisState.fcfsEnd
+                                        ? "genesis-phase-action-ended"
+                                        : "genesis-phase-action-upcoming"
+                            }`}
+                            onClick={
+                              handleGenesisFcfsMint
+                            }
+                            disabled={
+                              genesisMinting ||
+                              !connected ||
+                              !genesisFcfsLive ||
+                              !genesisFcfsEligible ||
+                              genesisFcfsWalletMaxed ||
+                              genesisFcfsRolloverPending
+                            }
+                          >
+                            {genesisMinting
+                              ? "MINTING..."
+                              : !connected
+                                ? "CONNECT WALLET"
+                                : genesisFcfsWalletMaxed
+                                  ? "MINT LIMIT REACHED"
+                                  : genesisFcfsRolloverPending
+                                    ? "OG ROLLOVER PENDING"
+                                    : genesisFcfsLive
+                                      ? genesisFcfsEligible
+                                        ? "MINT"
+                                        : "NOT ELIGIBLE"
+                                      : genesisState &&
+                                          genesisNow >=
+                                            genesisState.fcfsEnd
+                                        ? "ENDED"
+                                        : "UPCOMING"}
+                          </button>
+                        </div>
+                      </section>
+
+
+                      {/* =======================================================
+                          PUBLIC
+                          ======================================================= */}
+
+                      <section className="genesis-phase-card">
+
+                        <span
+                          className={
+                            genesisPublicLive
+                              ? "genesis-live-badge genesis-live-badge-active"
+                              : "genesis-live-badge"
+                          }
+                        >
+                          {genesisPublicLive
+                            ? "LIVE"
+                            : "NOT LIVE"}
+                        </span>
+
+                        <div className="genesis-phase-card-copy">
+
+                          <div className="genesis-phase-card-title-row">
+                            <h3>PUBLIC</h3>
+
+                            <span className="genesis-phase-tag">
+                              PUBLIC
+                            </span>
+                          </div>
+
+                          <span className="genesis-phase-date">
+                            Starts:{" "}
+                            {genesisState
+                              ? formatGenesisTime(
+                                  genesisState.publicStart
+                                )
+                              : "—"}
+                          </span>
+
+                          <span className="genesis-phase-date">
+                            Ends:{" "}
+                            {genesisState
+                              ? formatGenesisTime(
+                                  genesisState.publicEnd
+                                )
+                              : "—"}
+                          </span>
+
+                          <code>
+                            {genesisState
+                              ? `${genesisState.publicPrice} USDC`
+                              : "— USDC"}{" "}
+                            | LIMIT 2 PER WALLET
+                          </code>
+
+                        </div>
+
+                        <div className="genesis-phase-card-actions">
+
+                          <div className="genesis-mint-quantity">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setGenesisPublicQuantity(
+                                  (prev) =>
+                                    Math.max(
+                                      1,
+                                      prev - 1
+                                    )
+                                )
+                              }
+                              disabled={
+                                genesisMinting ||
+                                genesisPublicWalletMaxed ||
+                                genesisPublicQuantity <= 1
+                              }
+                            >
+                              −
+                            </button>
+
+                            <span>
+                              {genesisPublicQuantity}
+                            </span>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setGenesisPublicQuantity(
+                                  (prev) =>
+                                    Math.min(
+                                      genesisPublicRemaining,
+                                      prev + 1
+                                    )
+                                )
+                              }
+                              disabled={
+                                genesisMinting ||
+                                genesisPublicWalletMaxed ||
+                                genesisPublicQuantity >=
+                                  genesisPublicRemaining
+                              }
+                            >
+                              +
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            className={`genesis-phase-action ${
+                              genesisPublicWalletMaxed
+                                ? "genesis-phase-action-ended"
+                                : genesisPublicLive
+                                  ? "genesis-phase-action-live"
+                                  : genesisState &&
+                                      genesisNow >=
+                                        genesisState.publicEnd
+                                    ? "genesis-phase-action-ended"
+                                    : "genesis-phase-action-upcoming"
+                            }`}
+                            onClick={
+                              handleGenesisPublicMint
+                            }
+                            disabled={
+                              genesisMinting ||
+                              !connected ||
+                              !genesisPublicLive ||
+                              genesisPublicWalletMaxed
+                            }
+                          >
+                          {genesisMinting
+                            ? "MINTING..."
+                            : !connected
+                              ? "CONNECT WALLET"
+                              : genesisPublicWalletMaxed
+                                ? "MINT LIMIT REACHED"
+                                : genesisPublicLive
+                                  ? "MINT"
+                                  : genesisState &&
+                                      genesisNow >=
+                                        genesisState.publicEnd
+                                    ? "ENDED"
+                                    : "UPCOMING"}
+                          </button>
+                        </div>
+                      </section>
+
+                      </div>
+
+                    </div>
+                  )}
+                  </div>
+                </div>
+              )}
         </section>
         </>
         )}
@@ -4479,6 +6867,184 @@ function readLaunchCache() {
 
         {activePage === "LITEPAPER" && (
           <LitepaperPage />
+        )}
+
+        {genesisDropOpen &&
+          genesisLoading &&
+          !genesisState && (
+            <div className="genesis-loading-overlay">
+              <div className="genesis-loading-modal">
+                <span className="genesis-loading-spinner" />
+
+                <span className="genesis-loading-text">
+                  LOADING GENESIS DATA_
+                </span>
+              </div>
+            </div>
+          )}
+
+        {genesisToast && (
+          <>
+            <div
+              className="genesis-tx-backdrop"
+              aria-hidden="true"
+            />
+
+            <div
+              className="genesis-tx-toast"
+              role="dialog"
+              aria-modal="true"
+            >
+
+            <button
+              type="button"
+              className="genesis-tx-toast-close"
+              onClick={() =>
+                setGenesisToast(null)
+              }
+              aria-label="Close"
+            >
+              ×
+            </button>
+
+
+            {/* ================================================
+                PENDING
+                ================================================ */}
+
+            {genesisToast.status ===
+              "pending" && (
+              <>
+                <div className="genesis-tx-spinner" />
+
+                <div className="genesis-tx-toast-copy">
+                  <span className="genesis-tx-toast-eyebrow">
+                    TRANSACTION PENDING
+                  </span>
+
+                  <strong>
+                    MINTING GENESIS_
+                  </strong>
+
+                  <p>
+                    Waiting for blockchain
+                    confirmation...
+                  </p>
+
+                  <code>
+                    QTY {genesisToast.quantity}
+                  </code>
+                </div>
+              </>
+            )}
+
+
+            {/* ================================================
+                SUCCESS
+                ================================================ */}
+
+            {genesisToast.status ===
+              "success" && (
+              <>
+                <div className="genesis-fireworks">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                </div>
+
+                <div className="genesis-tx-success-icon">
+                  ✓
+                </div>
+
+                <div className="genesis-tx-toast-copy">
+                  <span className="genesis-tx-toast-eyebrow">
+                    TRANSACTION CONFIRMED
+                  </span>
+
+                  <strong>
+                    MINT SUCCESS_
+                  </strong>
+
+                  <p>
+                    Successfully minted{" "}
+                    {genesisToast.quantity} Genesis NFT
+                    {genesisToast.quantity > 1
+                      ? "s"
+                      : ""}
+                    .
+                  </p>
+                </div>
+
+                <div className="genesis-tx-toast-actions">
+
+                  <a
+                    href="#"
+                    className="genesis-tx-opensea"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    VIEW ON OPENSEA
+                  </a>
+
+                  <button
+                    type="button"
+                    className="genesis-tx-dismiss"
+                    onClick={() =>
+                      setGenesisToast(null)
+                    }
+                  >
+                    CLOSE
+                  </button>
+
+                </div>
+              </>
+            )}
+
+
+            {/* ================================================
+                ERROR
+                ================================================ */}
+
+            {genesisToast.status ===
+              "error" && (
+              <>
+                <div className="genesis-tx-error-icon">
+                  ×
+                </div>
+
+                <div className="genesis-tx-toast-copy">
+                  <span className="genesis-tx-toast-eyebrow">
+                    TRANSACTION FAILED
+                  </span>
+
+                  <strong>
+                    MINT FAILED_
+                  </strong>
+
+                  <p>
+                    {genesisToast.message}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  className="genesis-tx-dismiss genesis-tx-error-dismiss"
+                  onClick={() =>
+                    setGenesisToast(null)
+                  }
+                >
+                  CLOSE
+                </button>
+              </>
+            )}
+
+          </div>
+          </>
         )}
       </main>
     </div>

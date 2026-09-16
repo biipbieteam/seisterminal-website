@@ -9,6 +9,7 @@ import {
   } from "./wallet-context";
   import {
     ARC_TESTNET,
+    ARC_MAINNET,
   } from "../lib/arcNetwork";
   
   const WALLET_SESSION_KEY =
@@ -35,6 +36,10 @@ import {
     const isArcTestnet =
     chainId?.toLowerCase() ===
     ARC_TESTNET.chainId.toLowerCase();
+
+    const isArcMainnet =
+    chainId?.toLowerCase() ===
+    ARC_MAINNET.chainId.toLowerCase();
   
     // =======================================================
     // EIP-6963 PROVIDER DISCOVERY
@@ -416,6 +421,64 @@ import {
         }
     };
 
+    const switchToArcMainnet = async () => {
+      setWalletError("");
+    
+      if (!selectedProvider?.provider) {
+        setWalletError(
+          "Wallet provider unavailable."
+        );
+    
+        return {
+          success: false,
+          needsAdd: false,
+        };
+      }
+    
+      try {
+        await selectedProvider.provider.request({
+          method: "wallet_switchEthereumChain",
+          params: [
+            {
+              chainId: ARC_MAINNET.chainId,
+            },
+          ],
+        });
+    
+        return {
+          success: true,
+          needsAdd: false,
+        };
+      } catch (error) {
+        console.error(
+          "Mainnet network switch failed:",
+          error
+        );
+    
+        if (error?.code === 4902) {
+          return {
+            success: false,
+            needsAdd: true,
+          };
+        }
+    
+        if (error?.code === 4001) {
+          setWalletError(
+            "Network switch was rejected."
+          );
+        } else {
+          setWalletError(
+            "Unable to switch network."
+          );
+        }
+    
+        return {
+          success: false,
+          needsAdd: false,
+        };
+      }
+    };
+
     const addArcTestnet = async () => {
         setWalletError("");
       
@@ -461,6 +524,54 @@ import {
       
           return false;
         }
+    };
+
+    const addArcMainnet = async () => {
+      setWalletError("");
+    
+      if (!selectedProvider?.provider) {
+        setWalletError(
+          "Wallet provider unavailable."
+        );
+    
+        return false;
+      }
+    
+      try {
+        await selectedProvider.provider.request({
+          method: "wallet_addEthereumChain",
+          params: [
+            {
+              chainId: ARC_MAINNET.chainId,
+              chainName: ARC_MAINNET.chainName,
+              nativeCurrency:
+                ARC_MAINNET.nativeCurrency,
+              rpcUrls: ARC_MAINNET.rpcUrls,
+              blockExplorerUrls:
+                ARC_MAINNET.blockExplorerUrls,
+            },
+          ],
+        });
+    
+        return true;
+      } catch (error) {
+        console.error(
+          "Add ARC Mainnet failed:",
+          error
+        );
+    
+        if (error?.code === 4001) {
+          setWalletError(
+            "Adding ARC Mainnet was rejected."
+          );
+        } else {
+          setWalletError(
+            "Unable to add ARC Mainnet."
+          );
+        }
+    
+        return false;
+      }
     };
   
     // =======================================================
@@ -574,12 +685,15 @@ import {
           address,
           chainId,
           isArcTestnet,
+          isArcMainnet,
       
           walletError,
       
           connectProvider,
           switchToArcTestnet,
           addArcTestnet,
+          switchToArcMainnet,
+          addArcMainnet,
           disconnectWallet,
           clearWalletError: () =>
             setWalletError(""),
@@ -592,6 +706,7 @@ import {
           address,
           chainId,
           isArcTestnet,
+          isArcMainnet,
           walletError,
         ]
     );

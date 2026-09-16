@@ -18,3 +18,24 @@ export const ARC_TESTNET = {
       "https://testnet.arcscan.app",
     ],
   };
+
+  export const ARC_MAINNET = {
+    chainId: "0x13b2",
+    chainIdDecimal: 5042,
+  
+    chainName: "Arc Mainnet",
+  
+    rpcUrls: [
+      "https://rpc.mainnet.arc.io",
+    ],
+  
+    nativeCurrency: {
+      name: "USDC",
+      symbol: "USDC",
+      decimals: 18,
+    },
+  
+    blockExplorerUrls: [
+      "https://explorer.arc.io",
+    ],
+};
