@@ -6982,14 +6982,14 @@ useEffect(() => {
 
                 <div className="genesis-tx-toast-actions">
 
-                  <a
-                    href="#"
-                    className="genesis-tx-opensea"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    VIEW ON OPENSEA
-                  </a>
+                <a
+                  href="https://opensea.io/collection/arc-terminal-genesis"
+                  className="genesis-tx-opensea"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  VIEW ON OPENSEA
+                </a>
 
                   <button
                     type="button"
