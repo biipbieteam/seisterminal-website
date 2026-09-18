@@ -18,7 +18,7 @@ import {
         )
         .eq(
           "chain_id",
-          5042002
+          5042
         )
         .eq(
           "launch_id",

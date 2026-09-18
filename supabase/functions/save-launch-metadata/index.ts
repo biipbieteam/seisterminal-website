@@ -7,10 +7,10 @@ import {
   JsonRpcProvider,
 } from "https://esm.sh/ethers@6.15.0";
 
-const ARC_CHAIN_ID = 5042002n;
+const ARC_CHAIN_ID = 5042n;
 
 const LAUNCH_FACTORY_ADDRESS =
-  "0x8Da50245171d09a544eb047fc3d4e8cE4514931A";
+  "0x56FC882244f8FB1d05C2171d180872B38800706F";
 
   const LAUNCH_FACTORY_ABI = [
     "function launchFairToken(string name_, string symbol_) payable returns (uint256 launchId, address tokenAddress)",
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
 
     const rpcUrl =
       Deno.env.get(
-        "ARC_TESTNET_RPC_URL",
+        "ARC_MAINNET_RPC_URL",
       );
 
 
@@ -633,7 +633,7 @@ if (
 
 
       logoPath =
-        `arc-testnet/${tokenAddress.toLowerCase()}.${extension}`;
+        `arc-mainnet/${tokenAddress.toLowerCase()}.${extension}`;
 
 
       const bytes =

@@ -242,11 +242,6 @@ import {
         txRequest
       );
   
-    console.log(
-      "[GENESIS MINT] TX:",
-      tx.hash
-    );
-  
     const receipt =
       await tx.wait();
   
@@ -259,10 +254,6 @@ import {
       );
     }
   
-    console.log(
-      "[GENESIS MINT] CONFIRMED:",
-      receipt
-    );
   
     return {
       receipt,
@@ -436,10 +427,6 @@ export async function mintGenesisOG({
         txRequest
       );
   
-    console.log(
-      "[GENESIS OG MINT] TX:",
-      tx.hash
-    );
   
     const receipt =
       await tx.wait();
@@ -453,10 +440,6 @@ export async function mintGenesisOG({
       );
     }
   
-    console.log(
-      "[GENESIS OG MINT] CONFIRMED:",
-      receipt
-    );
   
     return {
       receipt,
@@ -648,10 +631,6 @@ export async function mintGenesisFCFS({
         txRequest
       );
   
-    console.log(
-      "[GENESIS FCFS MINT] TX:",
-      tx.hash
-    );
   
     const receipt =
       await tx.wait();
@@ -665,10 +644,6 @@ export async function mintGenesisFCFS({
       );
     }
   
-    console.log(
-      "[GENESIS FCFS MINT] CONFIRMED:",
-      receipt
-    );
   
     return {
       receipt,
@@ -840,10 +815,6 @@ export async function mintGenesisPublic({
         txRequest
       );
   
-    console.log(
-      "[GENESIS PUBLIC MINT] TX:",
-      tx.hash
-    );
   
     const receipt =
       await tx.wait();
@@ -857,10 +828,6 @@ export async function mintGenesisPublic({
       );
     }
   
-    console.log(
-      "[GENESIS PUBLIC MINT] CONFIRMED:",
-      receipt
-    );
   
     return {
       receipt,

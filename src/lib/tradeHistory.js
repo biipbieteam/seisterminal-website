@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 
-const ARC_CHAIN_ID = 5042002;
+const ARC_CHAIN_ID = 5042;
 
 export async function getTradeHistory(
   launchId

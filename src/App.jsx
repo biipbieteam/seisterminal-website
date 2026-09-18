@@ -11,7 +11,6 @@ import {
 } from "./contracts/launchWriter.js";
 import {
   getLaunchMetadata,
-  getIndexedLaunches,
 } from "./lib/launchMetadata.js";
 import { saveLaunchMetadata } from "./lib/saveLaunchMetadata";
 import {
@@ -80,7 +79,7 @@ function App() {
     arcNetworkNeedsAdd,
     setArcNetworkNeedsAdd,
   ] = useState(false);
-  
+
   const [
     copiedTokenAddress,
     setCopiedTokenAddress,
@@ -90,12 +89,12 @@ function App() {
     selectedLaunch,
     setSelectedLaunch,
   ] = useState(null);
-  
+
   const [
     tradeModalOpen,
     setTradeModalOpen,
   ] = useState(false);
-  
+
   const [
     tradeSide,
     setTradeSide,
@@ -105,12 +104,12 @@ function App() {
     tradeAmount,
     setTradeAmount,
   ] = useState("");
-  
+
   const [
     trading,
     setTrading,
   ] = useState(false);
-  
+
   const [
     tradeError,
     setTradeError,
@@ -145,7 +144,7 @@ function App() {
     tradeHistory,
     setTradeHistory,
   ] = useState([]);
-  
+
   const [
     tradeHistoryLoading,
     setTradeHistoryLoading,
@@ -161,7 +160,7 @@ function App() {
     tradeDataTab,
     setTradeDataTab,
   ] = useState("TRADES");
-  
+
   const chartIntervalSeconds = {
     "1m": 60,
     "5m": 300,
@@ -174,7 +173,7 @@ function App() {
     tokenHolders,
     setTokenHolders,
   ] = useState([]);
-  
+
   const [
     holdersLoading,
     setHoldersLoading,
@@ -184,7 +183,7 @@ function App() {
     statsTimeframe,
     setStatsTimeframe,
   ] = useState("24h");
-  
+
   const STATS_TIMEFRAME_MS = {
     "5m": 5 * 60 * 1000,
     "1h": 60 * 60 * 1000,
@@ -198,7 +197,7 @@ function App() {
     og: null,
     fcfs: null,
   });
-  
+
   const [
     genesisCountOpen,
     setGenesisCountOpen
@@ -230,7 +229,7 @@ function App() {
     hotIndex,
     setHotIndex,
   ] = useState(0);
-  
+
   const hotToken =
   topVolumeTokens[
     hotIndex
@@ -252,7 +251,7 @@ function App() {
   ] = useState("MARKET");
 
   const [
-    mobileSidebarOpen, 
+    mobileSidebarOpen,
     setMobileSidebarOpen
   ] = useState(false);
 
@@ -279,21 +278,21 @@ function App() {
       publicMinted: 0,
     });
 
-  
+
   const [genesisLoading, setGenesisLoading] =
     useState(false);
-  
+
   const [genesisError, setGenesisError] =
     useState("");
-  
+
     const [
       genesisInitialLoading,
       setGenesisInitialLoading
     ] = useState(false);
 
-    
+
   const [
-    genesisNow, 
+    genesisNow,
     setGenesisNow
   ] =
     useState(
@@ -309,7 +308,7 @@ function App() {
     genesisMintQuantity,
     setGenesisMintQuantity,
   ] = useState(1);
-    
+
   const [
     genesisToast,
     setGenesisToast,
@@ -319,37 +318,37 @@ function App() {
     genesisOgQuantity,
     setGenesisOgQuantity,
   ] = useState(1);
-    
+
   const [
     genesisFcfsQuantity,
     setGenesisFcfsQuantity,
   ] = useState(1);
-    
+
   const [
     genesisPublicQuantity,
     setGenesisPublicQuantity,
   ] = useState(1);
 
   const [
-    genesisEligibility, 
+    genesisEligibility,
     setGenesisEligibility
   ] =
     useState({
       og: false,
       fcfs: false,
     });
-  
+
   const [
-    genesisProofs, 
+    genesisProofs,
     setGenesisProofs
   ] =
     useState({
       og: [],
       fcfs: [],
     });
-  
+
   const [
-    genesisEligibilityLoading, 
+    genesisEligibilityLoading,
     setGenesisEligibilityLoading
   ] =
     useState(false);
@@ -360,27 +359,27 @@ function App() {
       1 -
         genesisWalletState.ogMinted
     );
-  
+
   const genesisFcfsRemaining =
     Math.max(
       0,
       2 -
         genesisWalletState.fcfsMinted
     );
-  
+
   const genesisPublicRemaining =
     Math.max(
       0,
       2 -
         genesisWalletState.publicMinted
     );
-  
+
   const genesisOgWalletMaxed =
     genesisOgRemaining === 0;
-  
+
   const genesisFcfsWalletMaxed =
     genesisFcfsRemaining === 0;
-  
+
   const genesisPublicWalletMaxed =
     genesisPublicRemaining === 0;
 
@@ -392,10 +391,7 @@ function App() {
     connecting,
     address,
     chainId,
-    isArcTestnet,
     isArcMainnet,
-    switchToArcTestnet,
-    addArcTestnet,
     switchToArcMainnet,
     addArcMainnet,
     walletError,
@@ -403,17 +399,17 @@ function App() {
     disconnectWallet,
     clearWalletError,
   } = useWallet();
-  
+
   const [
     liveLaunches,
     setLiveLaunches,
   ] = useState([]);
-  
+
   const [
     launchesLoading,
     setLaunchesLoading,
   ] = useState(true);
-  
+
   const [
     launchesError,
     setLaunchesError,
@@ -422,11 +418,11 @@ function App() {
   const refreshLaunches = async () => {
     try {
       setLaunchesError("");
-  
+
       const cachedLaunches =
         readLaunchCache();
-  
-  
+
+
       /*
        * CACHE FIRST
        *
@@ -442,153 +438,135 @@ function App() {
           setLiveLaunches(
             cachedLaunches
           );
-  
+
           setLaunchesLoading(false);
         } else {
           setLaunchesLoading(true);
         }
       }
-  
-  
+
+
       let orderedLaunches;
-  
-  
+
+
       /*
        * ========================================================
        * PRIMARY MARKET SOURCE:
-       * SUPABASE INDEX
+       * ARC MAINNET RPC
        * ========================================================
        *
-       * One database query instead of
-       * N sequential blockchain RPC reads.
+       * Smart-contract state is the source of truth.
+       *
+       * Supabase is used only for supplementary
+       * off-chain metadata such as token logos.
        */
+
+      const blockchainLaunches =
+        await getAllFairLaunches(
+          cachedLaunches
+        );
+
+
+      /*
+       * ========================================================
+       * SUPABASE METADATA ENRICHMENT
+       * ========================================================
+       *
+       * Failure to load Supabase metadata must NOT
+       * prevent on-chain launches from appearing.
+       */
+
+      let metadata = [];
+
       try {
-        orderedLaunches =
-          await getIndexedLaunches();
-  
+        metadata =
+          await getLaunchMetadata();
       } catch (
-        indexedError
+        metadataError
       ) {
         console.error(
-          "Indexed market read failed. Falling back to ARC RPC:",
-          indexedError
-        );
-  
-  
-        /*
-         * ======================================================
-         * EMERGENCY FALLBACK:
-         * BLOCKCHAIN READER
-         * ======================================================
-         *
-         * Keep the existing RPC path available
-         * if the indexed database is unavailable.
-         */
-  
-        const blockchainLaunches =
-          await getAllFairLaunches(
-            cachedLaunches
-          );
-  
-  
-        /*
-         * Existing metadata enrichment
-         * remains available for fallback.
-         */
-        let metadata = [];
-  
-        try {
-          metadata =
-            await getLaunchMetadata();
-        } catch (
+          "Failed to load launch metadata:",
           metadataError
-        ) {
-          console.error(
-            "Failed to load launch metadata:",
-            metadataError
-          );
-        }
-  
-  
-        const metadataByToken =
-          new Map(
-            metadata.map(
+        );
+      }
+
+
+      const metadataByToken =
+        new Map(
+          metadata
+            .filter(
+              (item) =>
+                item?.token_address
+            )
+            .map(
               (item) => [
                 item.token_address
                   .toLowerCase(),
-  
+
                 item,
               ]
             )
-          );
-  
-  
-        const enrichedLaunches =
-          blockchainLaunches.map(
-            (launch) => {
-              const tokenAddress =
-                launch?.tokenAddress;
-  
-              if (
-                !tokenAddress
-              ) {
-                return {
-                  ...launch,
-                  logoUrl:
-                    null,
-                };
-              }
-  
-  
-              const metadataItem =
-                metadataByToken.get(
-                  tokenAddress
-                    .toLowerCase()
-                );
-  
-  
+        );
+
+
+      const enrichedLaunches =
+        blockchainLaunches.map(
+          (launch) => {
+            const tokenAddress =
+              launch?.tokenAddress;
+
+            if (
+              !tokenAddress
+            ) {
               return {
                 ...launch,
-  
                 logoUrl:
-                  metadataItem
-                    ?.logoUrl ||
-                  null,
-  
-                launchTransactionHash:
-                  metadataItem
-                    ?.transaction_hash ||
                   null,
               };
             }
-          );
-  
-  
-        orderedLaunches =
-          [
-            ...enrichedLaunches,
-          ].reverse();
-      }
-  
-  
-      /*
-       * Database query is already:
-       *
-       * launch_id DESC
-       *
-       * so no reverse() is needed for
-       * the normal indexed path.
-       */
+
+
+            const metadataItem =
+              metadataByToken.get(
+                tokenAddress
+                  .toLowerCase()
+              );
+
+
+            return {
+              ...launch,
+
+              logoUrl:
+                metadataItem
+                  ?.logoUrl ||
+                null,
+
+              launchTransactionHash:
+                metadataItem
+                  ?.transaction_hash ||
+                null,
+            };
+          }
+        );
+
+
+      orderedLaunches =
+        [
+          ...enrichedLaunches,
+        ].reverse();
+
+
+
       setLiveLaunches(
         orderedLaunches
       );
-  
-  
+
+
       saveLaunchCache(
         orderedLaunches
       );
-  
-  
+
+
       /*
        * Keep an open trade modal attached
        * to the newest indexed state.
@@ -602,8 +580,8 @@ function App() {
           ) {
             return null;
           }
-  
-  
+
+
           const updatedLaunch =
             orderedLaunches.find(
               (launch) =>
@@ -613,32 +591,32 @@ function App() {
                   .tokenAddress
                   .toLowerCase()
             );
-  
-  
+
+
           return (
             updatedLaunch ||
             currentLaunch
           );
         }
       );
-  
-  
+
+
       return orderedLaunches;
-  
+
     } catch (error) {
       console.error(
         "Failed to load SEIS market:",
         error
       );
-  
-  
+
+
       setLaunchesError(
         "Unable to load SEIS market."
       );
-  
-  
+
+
       throw error;
-  
+
     } finally {
       setLaunchesLoading(
         false
@@ -654,7 +632,7 @@ function App() {
       message,
       type,
     });
-  
+
     setTimeout(() => {
       setGenesisToast(null);
     }, 3500);
@@ -685,12 +663,12 @@ function App() {
           tokenAddress:
             launch.tokenAddress,
         });
-      
+
       const holderCount =
         await getTokenHolderCount({
           launchId:
             launch.launchId,
-      
+
           tokenAddress:
             launch.tokenAddress,
       });
@@ -698,7 +676,7 @@ function App() {
       setTokenHolders(
         holders
       );
-      
+
       setTokenHolderCount(
         holderCount
       );
@@ -723,7 +701,7 @@ function App() {
       setTokenHolders([]);
       return;
     }
-  
+
     refreshTokenHolders(
       selectedLaunch
     );
@@ -737,16 +715,16 @@ function App() {
     value
   ) => {
     if (!value) {
-      return "—";
+      return "â€”";
     }
-  
+
     return `${value.slice(
       0,
       6
     )}...${value.slice(-4)}`;
   };
-  
-  
+
+
   const formatTradeUsdc = (
     rawValue
   ) => {
@@ -754,26 +732,26 @@ function App() {
       rawValue === null ||
       rawValue === undefined
     ) {
-      return "—";
+      return "â€”";
     }
-  
+
     try {
       const raw =
         BigInt(rawValue);
-  
+
       const whole =
         raw /
         10n ** 18n;
-  
+
       const fraction =
         raw %
         10n ** 18n;
-  
+
       const numeric =
         Number(whole) +
         Number(fraction) /
           1e18;
-  
+
       return numeric.toLocaleString(
         undefined,
         {
@@ -782,18 +760,18 @@ function App() {
         }
       );
     } catch {
-      return "—";
+      return "â€”";
     }
   };
-  
-  
+
+
   const formatTradeAge = (
     timestamp
   ) => {
     if (!timestamp) {
-      return "—";
+      return "â€”";
     }
-  
+
     const seconds =
       Math.max(
         0,
@@ -805,34 +783,34 @@ function App() {
             1000
         )
       );
-  
+
     if (seconds < 60) {
       return `${seconds}s ago`;
     }
-  
+
     const minutes =
       Math.floor(
         seconds / 60
       );
-  
+
     if (minutes < 60) {
       return `${minutes}m ago`;
     }
-  
+
     const hours =
       Math.floor(
         minutes / 60
       );
-  
+
     if (hours < 24) {
       return `${hours}h ago`;
     }
-  
+
     const days =
       Math.floor(
         hours / 24
       );
-  
+
     return `${days}d ago`;
   };
 
@@ -880,11 +858,7 @@ function App() {
         await getTradeHistory(
           launchId
         );
-      
-        console.log(
-          "ARC TRADE HISTORY DATA:",
-          history
-        );
+
 
       setTradeHistory(
         history
@@ -959,10 +933,10 @@ function App() {
         raw: 0n,
         formatted: "0",
       });
-  
+
       return;
     }
-  
+
     refreshTradeTokenBalance(
       selectedLaunch
     );
@@ -981,7 +955,7 @@ function App() {
     ) {
       return;
     }
-  
+
     refreshTradeStats(
       selectedLaunch.launchId,
       selectedLaunch.launchTransactionHash
@@ -1001,7 +975,7 @@ function App() {
       setTradeHistory([]);
       return;
     }
-  
+
     refreshTradeHistory(
       selectedLaunch.launchId
     );
@@ -1023,7 +997,7 @@ function App() {
       tokenLogoFile,
       setTokenLogoFile,
     ] = useState(null);
-    
+
     const [
       tokenLogoPreview,
       setTokenLogoPreview,
@@ -1033,12 +1007,12 @@ function App() {
       launching,
       setLaunching,
     ] = useState(false);
-    
+
     const [
       launchError,
       setLaunchError,
     ] = useState("");
-    
+
     const [
       launchSuccess,
       setLaunchSuccess,
@@ -1054,7 +1028,7 @@ function App() {
           tradeStats.total
         ) * 100
       : 50;
-  
+
   const sellPercent =
     tradeStats.total > 0
       ? (
@@ -1099,7 +1073,7 @@ useEffect(() => {
     ) {
       return;
     }
-  
+
     setHotIndex(
       (current) =>
         (
@@ -1110,15 +1084,15 @@ useEffect(() => {
         topVolumeTokens.length
     );
   };
-  
-  
+
+
   const showNextHotToken = () => {
     if (
       topVolumeTokens.length === 0
     ) {
       return;
     }
-  
+
     setHotIndex(
       (current) =>
         (
@@ -1137,13 +1111,13 @@ useEffect(() => {
     ) {
       return;
     }
-  
+
     const previousOverflow =
       document.body.style.overflow;
-  
+
     document.body.style.overflow =
       "hidden";
-  
+
     return () => {
       document.body.style.overflow =
         previousOverflow;
@@ -1157,18 +1131,18 @@ useEffect(() => {
   const handleTokenLogoChange = (event) => {
     const file =
       event.target.files?.[0];
-  
+
     if (!file) {
       return;
     }
-  
+
     const allowedTypes = [
       "image/png",
       "image/jpeg",
       "image/webp",
       "image/gif",
     ];
-  
+
     if (
       !allowedTypes.includes(file.type)
     ) {
@@ -1177,7 +1151,7 @@ useEffect(() => {
       );
       return;
     }
-  
+
     if (
       file.size >
       2 * 1024 * 1024
@@ -1187,80 +1161,81 @@ useEffect(() => {
       );
       return;
     }
-  
+
     setLaunchError("");
-  
+
     if (tokenLogoPreview) {
       URL.revokeObjectURL(
         tokenLogoPreview
       );
     }
-  
+
     setTokenLogoFile(file);
-  
+
     setTokenLogoPreview(
       URL.createObjectURL(file)
     );
   };
 
+
   const handleLaunchToken = async () => {
     if (launching) {
       return;
     }
-  
+
     setLaunchError("");
     setLaunchSuccess(null);
-  
+
     if (!connected) {
       setLaunchError(
         "Connect your wallet before launching."
       );
       return;
     }
-  
-    if (!isArcTestnet) {
+
+    if (!isArcMainnet) {
       setLaunchError(
-        "Switch to ARC Testnet before launching."
+        "Switch to ARC Mainnet before launching."
       );
       return;
     }
-  
+
     if (!selectedProvider?.provider) {
       setLaunchError(
         "Wallet provider unavailable."
       );
       return;
     }
-  
+
     try {
       setLaunching(true);
-  
+
       /*
        * --------------------------------------------------
        * 1. LAUNCH ON-CHAIN
        * --------------------------------------------------
        */
-  
+
       const result =
         await launchFairToken({
           eip1193Provider:
             selectedProvider.provider,
-  
+
           expectedAddress:
             address,
-  
+
           name:
             tokenName,
-  
+
           symbol:
             tokenSymbol,
-  
+
           devBuyAmount:
             devBuyAmount,
         });
-  
+
       setLaunchSuccess(result);
-  
+
       /*
       * --------------------------------------------------
       * 2. SAVE OFF-CHAIN METADATA
@@ -1321,42 +1296,42 @@ useEffect(() => {
           metadataError
         );
       }
-  
+
       /*
        * --------------------------------------------------
        * 3. RESET FORM
        * --------------------------------------------------
        */
-  
+
       setTokenName("");
       setTokenSymbol("");
       setDevBuyAmount("");
-  
+
       if (tokenLogoPreview) {
         URL.revokeObjectURL(
           tokenLogoPreview
         );
       }
-  
+
       setTokenLogoFile(null);
       setTokenLogoPreview("");
-  
+
       /*
        * --------------------------------------------------
        * 4. REFRESH MARKET
        * --------------------------------------------------
        */
-  
+
       setTimeout(() => {
         window.location.reload();
       }, 1000);
-  
+
     } catch (error) {
       console.error(
         "Token launch failed:",
         error
       );
-  
+
       if (error?.code === 4001) {
         setLaunchError(
           "Transaction was rejected."
@@ -1381,30 +1356,30 @@ useEffect(() => {
     ) {
       return;
     }
-  
+
     setTradeError("");
-  
+
     if (!connected) {
       setTradeError(
         "Connect your wallet before trading."
       );
       return;
     }
-  
-    if (!isArcTestnet) {
+
+    if (!isArcMainnet) {
       setTradeError(
-        "Switch to ARC Testnet before trading."
+        "Switch to ARC Mainnet before trading."
       );
       return;
     }
-  
+
     if (!selectedProvider?.provider) {
       setTradeError(
         "Wallet provider unavailable."
       );
       return;
     }
-  
+
     if (
       !tradeAmount ||
       Number(tradeAmount) <= 0
@@ -1414,12 +1389,12 @@ useEffect(() => {
       );
       return;
     }
-  
+
     try {
       setTrading(true);
-  
+
       let tradeResult;
-  
+
       if (
         tradeSide === "BUY"
       ) {
@@ -1427,13 +1402,13 @@ useEffect(() => {
           await buyFairToken({
             eip1193Provider:
               selectedProvider.provider,
-  
+
             expectedAddress:
               address,
-  
+
             launchId:
               selectedLaunch.launchId,
-  
+
             amount:
               tradeAmount,
           });
@@ -1442,21 +1417,21 @@ useEffect(() => {
           await sellFairToken({
             eip1193Provider:
               selectedProvider.provider,
-  
+
             expectedAddress:
               address,
-  
+
             launchId:
               selectedLaunch.launchId,
-  
+
             tokenAddress:
               selectedLaunch.tokenAddress,
-  
+
             amount:
               tradeAmount,
           });
       }
-  
+
       /*
        * On-chain transaction is already
        * confirmed at this point.
@@ -1468,24 +1443,24 @@ useEffect(() => {
         await saveTradeEvent({
           transactionHash:
             tradeResult.transactionHash,
-  
+
           launchId:
             selectedLaunch.launchId,
-  
+
           tokenAddress:
             selectedLaunch.tokenAddress,
-  
+
           traderAddress:
             address,
         });
-  
+
       } catch (tradeEventError) {
         console.error(
           "Trade event save failed:",
           tradeEventError
         );
       }
-  
+
       /*
        * Unlock immediately after
        * confirmed trade.
@@ -1494,23 +1469,23 @@ useEffect(() => {
        * user may trade again instantly.
        */
       setTrading(false);
-  
+
       /*
        * Refresh ancillary UI independently.
        */
       await Promise.allSettled([
         refreshLaunches(),
-      
+
         refreshTradeStats(
           selectedLaunch.launchId
         ),
-      
+
         refreshTradeTokenBalance(
           selectedLaunch
         ),
 
         refreshTradeQuoteBalance(),
-      
+
         refreshTradeHistory(
           selectedLaunch.launchId
         ),
@@ -1523,13 +1498,13 @@ useEffect(() => {
 
         refreshTopVolumeTokens(),
       ]);
-  
+
     } catch (error) {
       console.error(
         `${tradeSide} failed:`,
         error
       );
-  
+
       if (
         error?.code === 4001 ||
         error?.code ===
@@ -1546,7 +1521,7 @@ useEffect(() => {
           `Unable to ${tradeSide.toLowerCase()} token.`
         );
       }
-  
+
     } finally {
       setTrading(false);
     }
@@ -1558,11 +1533,11 @@ useEffect(() => {
     if (nextSide === tradeSide) {
       return;
     }
-  
+
     setTradeSide(
       nextSide
     );
-  
+
     /*
      * BUY amount is USDC.
      * SELL amount is token units.
@@ -1573,27 +1548,6 @@ useEffect(() => {
     setTradeAmount("");
     setTradeError("");
   };
-  
-  useEffect(() => {
-    async function testSupabase() {
-      try {
-        const rows =
-          await getLaunchMetadata();
-  
-        console.log(
-          "Supabase launch metadata:",
-          rows
-        );
-      } catch (error) {
-        console.error(
-          "Supabase test failed:",
-          error
-        );
-      }
-    }
-  
-    testSupabase();
-  }, []);
 
 
 
@@ -1728,39 +1682,39 @@ const chartPolyline =
       if (!Number.isFinite(value)) {
         return "$0";
       }
-    
+
       if (value >= 1_000_000_000) {
         return `$${(
           value /
           1_000_000_000
         ).toFixed(2)}B`;
       }
-    
+
       if (value >= 1_000_000) {
         return `$${(
           value /
           1_000_000
         ).toFixed(2)}M`;
       }
-    
+
       if (value >= 1_000) {
         return `$${(
           value /
           1_000
         ).toFixed(2)}K`;
       }
-    
+
       return `$${value.toFixed(2)}`;
     };
-    
-    
+
+
     const formatChartTime = (
       timestamp
     ) => {
       if (!timestamp) {
-        return "—";
+        return "â€”";
       }
-    
+
       return new Date(
         timestamp
       ).toLocaleTimeString(
@@ -1771,8 +1725,8 @@ const chartPolyline =
         }
       );
     };
-    
-    
+
+
     const chartYTicks =
       Array.from(
         {
@@ -1781,22 +1735,22 @@ const chartPolyline =
         (_, index) => {
           const ratio =
             index / 4;
-    
+
           const value =
             chartMaxY -
             chartYRange *
               ratio;
-    
+
           return {
             value,
-    
+
             top:
               ratio * 100,
           };
         }
       );
-    
-    
+
+
     const chartXTicks =
       chartValues.length > 0
         ? Array.from(
@@ -1814,21 +1768,21 @@ const chartPolyline =
                 return {
                   timestamp:
                     chartValues[0].x,
-    
+
                   left:
                     50,
                 };
               }
-    
+
               const ratio =
                 index / 4;
-    
+
               return {
                 timestamp:
                   chartMinX +
                   chartXRange *
                     ratio,
-    
+
                 left:
                   ratio * 100,
               };
@@ -1841,12 +1795,12 @@ const chartPolyline =
         STATS_TIMEFRAME_MS[
           statsTimeframe
         ];
-      
+
       const statsCutoff =
         Date.now() -
         statsWindowMs;
-      
-      
+
+
       const statsTrades =
         tradeHistory
           .filter(
@@ -1887,38 +1841,38 @@ const chartPolyline =
             },
             0n
           );
-        
-        
+
+
         const formatRawUsdc =
           (raw) => {
             const base =
               10n ** 18n;
-        
+
             const whole =
               raw / base;
-        
+
             const fraction =
               raw % base;
-        
+
             const value =
               Number(whole) +
               Number(fraction) /
                 1e18;
-        
+
             return value;
           };
-        
-        
+
+
         const statsVolume =
           formatRawUsdc(
             statsVolumeRaw
           );
-          
+
 
           let statsPriceChange =
           null;
-        
-        
+
+
         if (
           statsTrades.length >= 2
         ) {
@@ -1927,7 +1881,7 @@ const chartPolyline =
               statsTrades[0]
                 .price
             );
-        
+
           const lastPrice =
             Number(
               statsTrades[
@@ -1935,8 +1889,8 @@ const chartPolyline =
                 1
               ].price
             );
-        
-        
+
+
           if (
             Number.isFinite(
               firstPrice
@@ -1969,23 +1923,23 @@ const chartPolyline =
           {
             minimumFractionDigits:
               2,
-      
+
             maximumFractionDigits:
               4,
           }
         );
-      
-      
+
+
       const formattedPriceChange =
         statsPriceChange === null
-          ? "—"
+          ? "â€”"
           : `${statsPriceChange >= 0
               ? "+"
               : ""
             }${statsPriceChange.toFixed(
               2
             )}%`;
-            
+
  const refreshPlatformStats =
   async () => {
     try {
@@ -2145,7 +2099,7 @@ const chartPolyline =
       return [];
     }
   };
-  
+
   useEffect(() => {
     if (
       liveLaunches.length === 0
@@ -2153,7 +2107,7 @@ const chartPolyline =
       setTopVolumeTokens([]);
       return;
     }
-  
+
     refreshTopVolumeTokens();
   }, [liveLaunches]);
 
@@ -2163,16 +2117,16 @@ const chartPolyline =
     if (!raw) {
       return 0;
     }
-  
+
     const base =
       10n ** 18n;
-  
+
     const whole =
       raw / base;
-  
+
     const fraction =
       raw % base;
-  
+
     return (
       Number(whole) +
       Number(fraction) /
@@ -2186,30 +2140,30 @@ const chartPolyline =
       Number(
         launch.formatted.tokensSold
       );
-  
+
     const reserve =
       Number(
         launch.formatted.quoteReserve
       );
-  
+
     const totalSupply =
       Number(
         launch.formatted.totalSupply
       );
-  
+
     const currentVirtualTokenReserve =
       1_200_000_000 - sold;
-  
+
     const currentVirtualQuoteReserve =
       12_000 + reserve;
-  
+
     const price =
       currentVirtualQuoteReserve /
       currentVirtualTokenReserve;
-  
+
     const marketCap =
       price * totalSupply;
-  
+
     return {
       price,
       marketCap,
@@ -2266,32 +2220,32 @@ const chartPolyline =
           raw: 0n,
           formatted: "0",
         });
-    
+
         return null;
       }
-    
+
       try {
         const balance =
           await getTradeQuoteBalance({
             eip1193Provider:
               selectedProvider.provider,
-    
+
             walletAddress:
               address,
           });
-    
+
         setTradeQuoteBalance(
           balance
         );
-    
+
         return balance;
-    
+
       } catch (error) {
         console.error(
           "Failed to load USDC balance:",
           error
         );
-    
+
         return null;
       }
     };
@@ -2305,12 +2259,12 @@ const chartPolyline =
           raw: 0n,
           formatted: "0",
         });
-    
+
         return;
       }
-    
+
       refreshTradeQuoteBalance();
-    
+
     }, [
       address,
       connected,
@@ -2324,22 +2278,22 @@ const chartPolyline =
         Number(
           tradeTokenBalance.formatted
         );
-    
+
       if (
         !Number.isFinite(balance) ||
         balance <= 0
       ) {
         return;
       }
-    
+
       const amount =
         balance *
         (percent / 100);
-    
+
       setTradeAmount(
         amount.toString()
       );
-    
+
       setTradeError("");
     };
 
@@ -2434,7 +2388,7 @@ const handleGenesisTeamMint =
       console.warn(
         "[GENESIS MINT] Selected wallet provider unavailable"
       );
-    
+
       return;
     }
 
@@ -2456,73 +2410,67 @@ const handleGenesisTeamMint =
 
     try {
       setGenesisMinting(true);
-    
+
       setGenesisToast({
         status: "pending",
         quantity: genesisMintQuantity,
         txHash: null,
       });
-    
-      console.log(
-        "[GENESIS MINT] Team mint starting..."
-      );
-    
+
+
       const result =
       await mintGenesisTeam({
         eip1193Provider:
           selectedProvider.provider,
-    
+
         expectedAddress:
           address,
-    
+
         to:
           address,
-    
+
         quantity:
           genesisMintQuantity,
       });
-    
+
       setGenesisState(
         (prev) => {
           if (!prev) {
             return prev;
           }
-    
+
           return {
             ...prev,
-    
+
             totalSupply:
               prev.totalSupply +
               genesisMintQuantity,
-    
+
             remainingSupply:
               prev.remainingSupply -
               genesisMintQuantity,
           };
         }
       );
-    
+
       const state =
         await getGenesisState();
-    
+
       setGenesisState(state);
-    
+
       setGenesisToast({
         status: "success",
         quantity: genesisMintQuantity,
         txHash: result.txHash,
       });
-    
-      console.log(
-        "[GENESIS MINT] Team mint PASS"
-      );
-    
+
+
     } catch (error) {
       console.error(
         "[GENESIS MINT ERROR]",
         error
       );
-    
+
       setGenesisToast({
         status: "error",
         quantity: genesisMintQuantity,
@@ -2532,7 +2480,7 @@ const handleGenesisTeamMint =
           error?.message ||
           "Mint failed.",
       });
-    
+
     } finally {
       setGenesisMinting(false);
     }
@@ -2608,9 +2556,6 @@ const handleGenesisOgMint =
         txHash: null,
       });
 
-      console.log(
-        "[GENESIS OG MINT] Starting..."
-      );
 
       const result =
         await mintGenesisOG({
@@ -2672,9 +2617,6 @@ const handleGenesisOgMint =
           result.txHash,
       });
 
-      console.log(
-        "[GENESIS OG MINT] PASS"
-      );
 
     } catch (error) {
       console.error(
@@ -2769,9 +2711,6 @@ const handleGenesisFcfsMint =
         txHash: null,
       });
 
-      console.log(
-        "[GENESIS FCFS MINT] Starting..."
-      );
 
       const result =
         await mintGenesisFCFS({
@@ -2833,9 +2772,6 @@ const handleGenesisFcfsMint =
           result.txHash,
       });
 
-      console.log(
-        "[GENESIS FCFS MINT] PASS"
-      );
 
     } catch (error) {
       console.error(
@@ -2909,9 +2845,6 @@ const handleGenesisPublicMint =
         txHash: null,
       });
 
-      console.log(
-        "[GENESIS PUBLIC MINT] Starting..."
-      );
 
       const result =
         await mintGenesisPublic({
@@ -2970,9 +2903,6 @@ const handleGenesisPublicMint =
           result.txHash,
       });
 
-      console.log(
-        "[GENESIS PUBLIC MINT] PASS"
-      );
 
     } catch (error) {
       console.error(
@@ -3020,24 +2950,20 @@ useEffect(() => {
       localStorage.getItem(
         cacheKey
       );
-  
+
     if (cachedRaw) {
       const cached =
         JSON.parse(
           cachedRaw
         );
-  
+
       if (
         cached?.state &&
         !cancelled
       ) {
         hasCachedState = true;
-  
-        console.log(
-          "[GENESIS] cache restored:",
-          cached.state
-        );
-  
+
+
         setGenesisState(
           cached.state
         );
@@ -3049,7 +2975,7 @@ useEffect(() => {
       error
     );
   }
-  
+
   setGenesisInitialLoading(
     !hasCachedState
   );
@@ -3066,17 +2992,8 @@ useEffect(() => {
       setGenesisLoading(true);
       setGenesisError("");
 
-      console.log(
-        "[GENESIS] refreshing contract state..."
-      );
-
       const state =
         await getGenesisState();
-
-      console.log(
-        "[GENESIS] state loaded:",
-        state
-      );
 
       if (cancelled) {
         return;
@@ -3119,9 +3036,6 @@ useEffect(() => {
         })
       );
 
-      console.log(
-        "[GENESIS] cache updated"
-      );
     } catch (error) {
       console.error(
         "[GENESIS STATE ERROR]",
@@ -3158,7 +3072,7 @@ useEffect(() => {
   const genesisOgEligible =
     !!address &&
     genesisEligibility.og === true;
-  
+
   const genesisFcfsEligible =
     !!address &&
     genesisEligibility.fcfs === true;
@@ -3190,7 +3104,7 @@ useEffect(() => {
     !!genesisState &&
     genesisState.fcfsMintedSupply >=
       genesisState.fcfsInitialSupply;
-  
+
   const genesisFcfsRolloverPending =
     genesisFcfsLive &&
     genesisNow < genesisState.ogEnd &&
@@ -3242,9 +3156,9 @@ useEffect(() => {
     timestamp
   ) => {
     if (!timestamp) {
-      return "—";
+      return "â€”";
     }
-  
+
     return new Date(
       timestamp * 1000
     ).toLocaleString(
@@ -3264,21 +3178,21 @@ useEffect(() => {
     if (!genesisDropOpen) {
       return;
     }
-  
+
     const updateNow = () => {
       setGenesisNow(
         Math.floor(Date.now() / 1000)
       );
     };
-  
+
     updateNow();
-  
+
     const timer =
       setInterval(
         updateNow,
         1000
       );
-  
+
     return () => {
       clearInterval(timer);
     };
@@ -3286,89 +3200,66 @@ useEffect(() => {
 
   useEffect(() => {
     let cancelled = false;
-  
+
     async function loadGenesisEligibility() {
       if (!genesisDropOpen || !address) {
         setGenesisEligibility({
           og: false,
           fcfs: false,
         });
-  
+
         setGenesisProofs({
           og: [],
           fcfs: [],
         });
-  
+
         setGenesisEligibilityLoading(false);
-  
+
         return;
       }
-  
+
       setGenesisEligibilityLoading(true);
-  
+
       try {
         const result =
           await getGenesisEligibility(
             address
           );
-  
+
         if (cancelled) return;
-  
+
         setGenesisEligibility({
           og:
             result.ogEligible === true,
-  
+
           fcfs:
             result.fcfsEligible === true,
         });
-  
+
         setGenesisProofs({
           og:
             Array.isArray(result.ogProof)
               ? result.ogProof
               : [],
-  
+
           fcfs:
             Array.isArray(result.fcfsProof)
               ? result.fcfsProof
               : [],
         });
-  
-        console.log(
-          "[GENESIS ELIGIBILITY]",
-          {
-            address:
-              address.toLowerCase(),
-  
-            ogEligible:
-              result.ogEligible,
-  
-            fcfsEligible:
-              result.fcfsEligible,
-  
-            ogProofLength:
-              Array.isArray(result.ogProof)
-                ? result.ogProof.length
-                : 0,
-  
-            fcfsProofLength:
-              Array.isArray(result.fcfsProof)
-                ? result.fcfsProof.length
-                : 0,
-          }
-        );
+
       } catch (error) {
         console.error(
           "[GENESIS ELIGIBILITY]",
           error
         );
-  
+
         if (!cancelled) {
           setGenesisEligibility({
             og: false,
             fcfs: false,
           });
-  
+
           setGenesisProofs({
             og: [],
             fcfs: [],
@@ -3380,9 +3271,9 @@ useEffect(() => {
         }
       }
     }
-  
+
     loadGenesisEligibility();
-  
+
     return () => {
       cancelled = true;
     };
@@ -3401,7 +3292,7 @@ useEffect(() => {
         </span>
       );
     }
-  
+
     if (genesisEligibilityLoading) {
       return (
         <span className="genesis-eligibility-badge checking">
@@ -3409,7 +3300,7 @@ useEffect(() => {
         </span>
       );
     }
-  
+
     return (
       <span
         className={
@@ -3427,7 +3318,7 @@ useEffect(() => {
 
   useEffect(() => {
     let cancelled = false;
-  
+
     async function loadGenesisWalletState() {
       if (
         !connected ||
@@ -3438,42 +3329,38 @@ useEffect(() => {
           fcfsMinted: 0,
           publicMinted: 0,
         });
-  
+
         return;
       }
-  
+
       try {
         const walletState =
           await getGenesisWalletState(
             address
           );
-  
+
         if (cancelled) {
           return;
         }
-  
+
         setGenesisWalletState(
           walletState
         );
-  
-        console.log(
-          "[GENESIS WALLET STATE]",
-          walletState
-        );
+
       } catch (error) {
         if (cancelled) {
           return;
         }
-  
+
         console.error(
           "[GENESIS WALLET STATE ERROR]",
           error
         );
       }
     }
-  
+
     loadGenesisWalletState();
-  
+
     return () => {
       cancelled = true;
     };
@@ -3574,7 +3461,7 @@ useEffect(() => {
               }}
             >
               <span className="sidebar-nav-icon">
-                ◇
+                â—‡
               </span>
 
               <span>
@@ -3603,7 +3490,7 @@ useEffect(() => {
               className="sidebar-nav-item"
             >
               <span className="sidebar-nav-icon">
-                ↔
+                â†”
               </span>
 
               <span className="sidebar-nav-label">
@@ -3628,7 +3515,7 @@ useEffect(() => {
               }}
             >
               <span className="sidebar-nav-icon">
-                ▤
+                â–¤
               </span>
 
               <span>
@@ -3648,7 +3535,7 @@ useEffect(() => {
               }}
             >
               <span className="sidebar-nav-icon">
-                □
+                â–¡
               </span>
 
               <span>
@@ -3669,7 +3556,7 @@ useEffect(() => {
             >
               GENESIS DROP_
             </button>
-            
+
           <button
             type="button"
             className="sidebar-launch-button"
@@ -3977,7 +3864,7 @@ useEffect(() => {
 
                   <div className="market-loading-content">
                     <strong>LOADING MARKET_</strong>
-                    <span>Fetching tokens from ARC Testnet...</span>
+                    <span>Fetching tokens from ARC Mainnet...</span>
                   </div>
                 </div>
               </div>
@@ -4032,7 +3919,7 @@ useEffect(() => {
                 .filter((launch) => {
                   const now =
                     Date.now();
-              
+
                   if (
                     marketFilter ===
                     "NEW_LAUNCH"
@@ -4042,12 +3929,12 @@ useEffect(() => {
                     ) {
                       return false;
                     }
-              
+
                     const createdTime =
                       new Date(
                         launch.createdAt
                       ).getTime();
-              
+
                     return (
                       Number.isFinite(
                         createdTime
@@ -4057,7 +3944,7 @@ useEffect(() => {
                         10 * 60 * 60 * 1000
                     );
                   }
-              
+
                   if (
                     marketFilter ===
                     "LAST_TRADE"
@@ -4067,12 +3954,12 @@ useEffect(() => {
                     ) {
                       return false;
                     }
-              
+
                     const lastTradeTime =
                       new Date(
                         launch.lastTradeAt
                       ).getTime();
-              
+
                     return (
                       Number.isFinite(
                         lastTradeTime
@@ -4082,7 +3969,7 @@ useEffect(() => {
                         6 * 60 * 60 * 1000
                     );
                   }
-              
+
                   return true;
                 })
                 .sort((a, b) => {
@@ -4099,7 +3986,7 @@ useEffect(() => {
                       ).getTime()
                     );
                   }
-              
+
                   if (
                     marketFilter ===
                     "LAST_TRADE"
@@ -4113,7 +4000,7 @@ useEffect(() => {
                       ).getTime()
                     );
                   }
-              
+
                   if (
                     marketFilter ===
                     "TOP_MCAP"
@@ -4126,43 +4013,43 @@ useEffect(() => {
                           launch.formatted
                             .tokensSold
                         );
-              
+
                       const reserve =
                         Number(
                           launch.formatted
                             .quoteReserve
                         );
-              
+
                       const totalSupply =
                         Number(
                           launch.formatted
                             .totalSupply
                         );
-              
+
                       const currentVirtualTokenReserve =
                         1_200_000_000 -
                         sold;
-              
+
                       const currentVirtualQuoteReserve =
                         12_000 +
                         reserve;
-              
+
                       const spotPrice =
                         currentVirtualQuoteReserve /
                         currentVirtualTokenReserve;
-              
+
                       return (
                         spotPrice *
                         totalSupply
                       );
                     };
-              
+
                     return (
                       getMarketCap(b) -
                       getMarketCap(a)
                     );
                   }
-              
+
                   return 0;
                 })
                 .filter((launch) => {
@@ -4170,31 +4057,31 @@ useEffect(() => {
                     tokenSearch
                       .trim()
                       .toLowerCase();
-              
+
                   if (!query) {
                     return true;
                   }
-              
+
                   const tokenAddress = (
                     launch.tokenAddress ||
                     launch.token_address ||
                     ""
                   ).toLowerCase();
-              
+
                   const tokenName = (
                     launch.tokenName ||
                     launch.token_name ||
                     launch.name ||
                     ""
                   ).toLowerCase();
-              
+
                   const tokenSymbol = (
                     launch.tokenSymbol ||
                     launch.token_symbol ||
                     launch.symbol ||
                     ""
                   ).toLowerCase();
-              
+
                   return (
                     tokenAddress.includes(
                       query
@@ -4251,17 +4138,17 @@ useEffect(() => {
                   Number(
                     launch.formatted.totalSupply
                   );
-                
+
                 const currentVirtualTokenReserve =
                   1_200_000_000 - sold;
-                
+
                 const currentVirtualQuoteReserve =
                   12_000 + reserve;
-                
+
                 const spotPrice =
                   currentVirtualQuoteReserve /
                   currentVirtualTokenReserve;
-                
+
                 const marketCap =
                   spotPrice * totalSupply;
 
@@ -4361,7 +4248,7 @@ useEffect(() => {
                       >
                         {copiedTokenAddress ===
                         launch.tokenAddress
-                          ? "COPIED ✓"
+                          ? "COPIED âœ“"
                           : "COPY"}
                       </button>
                     </div>
@@ -4406,7 +4293,7 @@ useEffect(() => {
                     <span>
                       {launch.statusLabel === "GRADUATED"
                         ? "DEX"
-                        : "—"}
+                        : "â€”"}
                     </span>
                   </div>
                 );
@@ -4433,7 +4320,7 @@ useEffect(() => {
                         onClick={() => setLaunchOpen(false)}
                         aria-label="Close launch modal"
                       >
-                        ×
+                        Ã—
                       </button>
                     </div>
 
@@ -4541,7 +4428,7 @@ useEffect(() => {
                         </div>
 
 
-                        {/* RIGHT COLUMN — TOKEN LOGO */}
+                        {/* RIGHT COLUMN â€” TOKEN LOGO */}
                         <div className="launch-logo-column">
                           <span className="launch-type-label">
                             TOKEN LOGO (REQUIRED)
@@ -4569,7 +4456,7 @@ useEffect(() => {
                                     setTokenLogoPreview("");
                                   }}
                                 >
-                                  ×
+                                  Ã—
                                 </button>
                               </div>
                             ) : (
@@ -4583,7 +4470,7 @@ useEffect(() => {
                             )}
 
                             <label className="token-logo-button">
-                              ↑ CHOOSE IMAGE
+                              â†‘ CHOOSE IMAGE
 
                               <input
                                 type="file"
@@ -4609,7 +4496,7 @@ useEffect(() => {
                               </span>
 
                               <span>
-                                (300 × 300)
+                                (300 Ã— 300)
                               </span>
                             </div>
 
@@ -4708,7 +4595,7 @@ useEffect(() => {
                       </div>
 
                     </div>
-                    
+
                     {launchError && (
                       <div className="launch-modal-error">
                         {launchError}
@@ -4778,7 +4665,7 @@ useEffect(() => {
                           setWalletModalOpen(false)
                         }
                       >
-                        ×
+                        Ã—
                       </button>
                     </div>
 
@@ -4869,7 +4756,7 @@ useEffect(() => {
                         }
                         aria-label="Close account modal"
                       >
-                        ×
+                        Ã—
                       </button>
                     </div>
 
@@ -4902,15 +4789,15 @@ useEffect(() => {
                         }
                       >
                         {isArcMainnet
-                          ? "● ARC MAINNET"
-                          : "● WRONG NETWORK"}
+                          ? "â— ARC MAINNET"
+                          : "â— WRONG NETWORK"}
                       </strong>
 
                       <small className="network-chain-id">
                         Current Chain ID:{" "}
                         {chainId
                           ? parseInt(chainId, 16)
-                          : "—"}
+                          : "â€”"}
                       </small>
                     </div>
 
@@ -5045,12 +4932,12 @@ useEffect(() => {
                             >
                               {copiedTokenAddress ===
                               selectedLaunch.tokenAddress
-                                ? "COPIED ✓"
+                                ? "COPIED âœ“"
                                 : "COPY"}
                             </button>
 
                             <span className="trade-terminal-badge">
-                              Launched on ARC Testnet
+                              Launched on ARC Mainnet
                             </span>
 
                           </div>
@@ -5070,7 +4957,7 @@ useEffect(() => {
                           setSelectedLaunch(null);
                         }}
                       >
-                        ×
+                        Ã—
                       </button>
                     </div>
 
@@ -5198,7 +5085,7 @@ useEffect(() => {
                             </div>
 
                             <div>
-                              ARC TESTNET_
+                              ARC MAINNET_
                             </div>
                           </div>
                         </div>
@@ -5370,7 +5257,7 @@ useEffect(() => {
 
                                         <a
                                           className="trade-table-txn"
-                                          href={`https://testnet.arcscan.app/tx/${trade.transaction_hash}`}
+                                          href={`https://explorer.arc.io/tx/${trade.transaction_hash}`}
                                           target="_blank"
                                           rel="noreferrer"
                                           title={
@@ -5384,7 +5271,7 @@ useEffect(() => {
                                               )}...${trade.transaction_hash.slice(
                                                 -4
                                               )}`
-                                            : "—"}
+                                            : "â€”"}
                                         </a>
                                       </div>
                                     )
@@ -5736,14 +5623,14 @@ useEffect(() => {
                                 )}...${selectedLaunch.creator.slice(
                                   -4
                                 )}`
-                              : "—"}
+                              : "â€”"}
                           </strong>
                         </div>
 
                         <div className="trade-box">
                           <div className="trade-progress-row">
                             <strong>MC $10K</strong>
-                            <span>→</span>
+                            <span>â†’</span>
                             <strong>$60K</strong>
                           </div>
 
@@ -5773,7 +5660,7 @@ useEffect(() => {
                       onClick={() => setGenesisDropOpen(false)}
                       aria-label="Close Genesis Drop"
                     >
-                      ×
+                      Ã—
                     </button>
 
                     {genesisDropView === "details" ? (
@@ -6091,8 +5978,8 @@ useEffect(() => {
                       </div>
 
 
-                      {/* ========================================================= 
-                          AVAILABLE ITEMS 
+                      {/* =========================================================
+                          AVAILABLE ITEMS
                           ========================================================= */}
 
                       <div className="genesis-available-section">
@@ -6276,7 +6163,7 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.teamStart
                                 )
-                              : "—"}
+                              : "â€”"}
                           </span>
 
                           <span className="genesis-phase-date">
@@ -6285,7 +6172,7 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.teamEnd
                                 )
-                              : "—"}
+                              : "â€”"}
                           </span>
 
                           <code>
@@ -6314,7 +6201,7 @@ useEffect(() => {
                                 genesisMintQuantity <= 1
                               }
                             >
-                              −
+                              âˆ’
                             </button>
 
                             <span>
@@ -6433,7 +6320,7 @@ useEffect(() => {
                               }
                             >
                               {genesisCountOpen.og
-                                ? `[${genesisWhitelistCounts.og ?? "—"}]`
+                                ? `[${genesisWhitelistCounts.og ?? "â€”"}]`
                                 : "[ADDRESS]"}
                             </button>
                           </div>
@@ -6444,7 +6331,7 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.ogStart
                                 )
-                              : "—"}
+                              : "â€”"}
                           </span>
 
                           <span className="genesis-phase-date">
@@ -6453,7 +6340,7 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.ogEnd
                                 )
-                              : "—"}
+                              : "â€”"}
                           </span>
 
                           <code>
@@ -6469,7 +6356,7 @@ useEffect(() => {
                               type="button"
                               disabled
                             >
-                              −
+                              âˆ’
                             </button>
 
                             <span>
@@ -6573,7 +6460,7 @@ useEffect(() => {
                               }
                             >
                               {genesisCountOpen.fcfs
-                                ? `[${genesisWhitelistCounts.fcfs ?? "—"}]`
+                                ? `[${genesisWhitelistCounts.fcfs ?? "â€”"}]`
                                 : "[ADDRESS]"}
                             </button>
                           </div>
@@ -6584,7 +6471,7 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.fcfsStart
                                 )
-                              : "—"}
+                              : "â€”"}
                           </span>
 
                           <span className="genesis-phase-date">
@@ -6593,20 +6480,20 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.fcfsEnd
                                 )
-                              : "—"}
+                              : "â€”"}
                           </span>
 
                           <code>
                             {genesisState
                               ? `${genesisState.fcfsPrice} USDC`
-                              : "— USDC"}{" "}
+                              : "â€” USDC"}{" "}
                             | LIMIT 2 PER WALLET
                           </code>
 
                         </div>
 
                         <div className="genesis-phase-card-actions">
-                          
+
                           <div className="genesis-mint-quantity">
                             <button
                               type="button"
@@ -6625,7 +6512,7 @@ useEffect(() => {
                                 genesisFcfsQuantity <= 1
                               }
                             >
-                              −
+                              âˆ’
                             </button>
 
                             <span>
@@ -6741,7 +6628,7 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.publicStart
                                 )
-                              : "—"}
+                              : "â€”"}
                           </span>
 
                           <span className="genesis-phase-date">
@@ -6750,13 +6637,13 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.publicEnd
                                 )
-                              : "—"}
+                              : "â€”"}
                           </span>
 
                           <code>
                             {genesisState
                               ? `${genesisState.publicPrice} USDC`
-                              : "— USDC"}{" "}
+                              : "â€” USDC"}{" "}
                             | LIMIT 2 PER WALLET
                           </code>
 
@@ -6782,7 +6669,7 @@ useEffect(() => {
                                 genesisPublicQuantity <= 1
                               }
                             >
-                              −
+                              âˆ’
                             </button>
 
                             <span>
@@ -6904,7 +6791,7 @@ useEffect(() => {
               }
               aria-label="Close"
             >
-              ×
+              Ã—
             </button>
 
 
@@ -6958,7 +6845,7 @@ useEffect(() => {
                 </div>
 
                 <div className="genesis-tx-success-icon">
-                  ✓
+                  âœ“
                 </div>
 
                 <div className="genesis-tx-toast-copy">
@@ -7014,7 +6901,7 @@ useEffect(() => {
               "error" && (
               <>
                 <div className="genesis-tx-error-icon">
-                  ×
+                  Ã—
                 </div>
 
                 <div className="genesis-tx-toast-copy">

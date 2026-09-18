@@ -366,7 +366,7 @@ function DocsPage() {
 
                     <p>
                     SEIS TERMINAL currently operates on
-                    ARC Testnet. Before launching or trading,
+                    ARC Mainnet. Before launching or trading,
                     make sure your wallet is connected to
                     the supported network.
                     </p>
@@ -378,7 +378,7 @@ function DocsPage() {
                         </span>
 
                         <strong>
-                        ARC TESTNET
+                        ARC MAINNET
                         </strong>
                     </div>
 
@@ -388,7 +388,7 @@ function DocsPage() {
                         </span>
 
                         <strong>
-                        5042002
+                        5042
                         </strong>
                     </div>
 
@@ -410,7 +410,7 @@ function DocsPage() {
 
                     <p>
                         If your wallet is connected to another
-                        network, select ARC Testnet in your
+                        network, select ARC Mainnet in your
                         wallet before submitting a transaction.
                     </p>
                     </div>
@@ -3397,7 +3397,7 @@ function DocsPage() {
                     </div>
 
                     <div className="docs-contract-address">
-                        0x8Da50245171d09a544eb047fc3d4e8cE4514931A
+                        0x56FC882244f8FB1d05C2171d180872B38800706F
                     </div>
                     </div>
 
@@ -3794,7 +3794,7 @@ function DocsPage() {
                     </div>
 
                     <div className="docs-contract-address">
-                        0x29757b60024A5ea1873f71C73b3d1EC1728E0a5e
+                        0x6Ab39fB0038Be7a4d15914023f813cEB6193A097
                     </div>
                     </div>
 
@@ -3989,11 +3989,11 @@ function DocsPage() {
                         </span>
 
                         <strong>
-                        ARC TESTNET
+                        ARC MAINNET
                         </strong>
 
                         <small>
-                        Chain ID 5042002
+                        Chain ID 5042
                         </small>
                     </div>
 
@@ -4003,7 +4003,7 @@ function DocsPage() {
                         </span>
 
                         <strong>
-                        0x8Da5...931A
+                        0x56FC...706F
                         </strong>
 
                         <small>
@@ -4017,7 +4017,7 @@ function DocsPage() {
                         </span>
 
                         <strong>
-                        0x2975...0a5e
+                        0x6Ab3...A097
                         </strong>
 
                         <small>
@@ -4031,11 +4031,11 @@ function DocsPage() {
                         </span>
 
                         <strong>
-                        0xd86f...E95e
+                        0xF523...1fe6
                         </strong>
 
                         <small>
-                        Current testnet deployment
+                        Current mainnet deployment
                         </small>
                     </div>
                     </div>
@@ -4805,7 +4805,7 @@ function DocsPage() {
 
                     <p>
                     The current deployment operates on
-                    ARC Testnet.
+                    ARC Mainnet.
                     </p>
 
                     <div className="docs-faq-info-grid">
@@ -4815,7 +4815,7 @@ function DocsPage() {
                         </span>
 
                         <strong>
-                        ARC TESTNET
+                        ARC MAINNET
                         </strong>
                     </div>
 
@@ -4825,7 +4825,7 @@ function DocsPage() {
                         </span>
 
                         <strong>
-                        5042002
+                        5042
                         </strong>
                     </div>
 

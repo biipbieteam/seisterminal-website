@@ -11,7 +11,7 @@ import {
 
 
 const ARC_CHAIN_ID =
-  5042002n;
+  5042n;
 
 const TOKEN_DECIMALS =
   10n ** 18n;
@@ -31,14 +31,14 @@ const INITIAL_VIRTUAL_QUOTE_RESERVE =
 const PRICE_SCALE =
   10n ** 18n;
 
-const LAUNCH_FACTORY_ADDRESS =
-  "0x8Da50245171d09a544eb047fc3d4e8cE4514931A";
+  const LAUNCH_FACTORY_ADDRESS =
+  "0x56FC882244f8FB1d05C2171d180872B38800706F";
 
 
 const LAUNCH_FACTORY_ABI = [
   "event FairTokenBought(uint256 indexed launchId, address indexed buyer, address indexed token, uint256 quoteAmount, uint256 tokenAmount, uint256 tokensSold, uint256 quoteReserve)",
 
-  "event FairTokenSold(uint256 indexed launchId, address indexed seller, address indexed token, uint256 tokenAmount, uint256 quoteAmount, uint256 tokensSold, uint256 quoteReserve)",
+  "event FairTokenSold(uint256 indexed launchId, address indexed seller, address indexed token, uint256 tokenAmount, uint256 quoteOut, uint256 tokensSold, uint256 quoteReserve)",
 
   "function fairLaunches(uint256) view returns (address token, address creator, uint256 totalSupply, uint256 bondingSupply, uint256 liquiditySupply, uint256 tokensSold, uint256 quoteReserve, uint256 transactionCount, uint8 status)",
 ];
@@ -111,9 +111,9 @@ Deno.serve(
           "SUPABASE_SERVICE_ROLE_KEY"
         );
 
-      const rpcUrl =
+        const rpcUrl =
         Deno.env.get(
-          "ARC_TESTNET_RPC_URL"
+          "ARC_MAINNET_RPC_URL"
         );
 
 
@@ -479,9 +479,9 @@ Deno.serve(
               parsed.args
                 .tokenAmount;
 
-            quoteAmount =
-              parsed.args
-                .quoteAmount;
+              quoteAmount =
+                parsed.args
+                  .quoteOut;
 
               tokensSold =
                 parsed.args

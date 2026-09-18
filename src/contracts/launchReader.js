@@ -3,23 +3,23 @@ import {
     JsonRpcProvider,
     formatUnits,
   } from "ethers";
-  
+
   import {
-    ARC_TESTNET,
-    ARC_TESTNET_CONTRACTS,
+    ARC_MAINNET,
+    ARC_MAINNET_CONTRACTS,
     getLaunchStatusLabel,
-  } from "./arcTestnet.js";
-  
+  } from "./arcMainnet.js";
+
   import {
     LAUNCH_FACTORY_ABI,
     MEME_TOKEN_ABI,
   } from "./abis.js";
-  
-  
+
+
   /*
    * ============================================================
    * ARC TERMINAL
-   * Public ARC Testnet Fair Launch Reader
+   * Public ARC Mainnet Fair Launch Reader
    * ============================================================
    *
    * READ ONLY.
@@ -32,54 +32,54 @@ import {
    * - does NOT request permissions
    *
    * Public blockchain data is read directly
-   * from the ARC Testnet RPC.
+   * from the ARC Mainnet RPC.
    */
-  
-  
+
+
   /*
    * ------------------------------------------------------------
    * READ-ONLY PROVIDER
    * ------------------------------------------------------------
    */
-  
+
   const provider =
     new JsonRpcProvider(
-      ARC_TESTNET.rpcUrl,
-      ARC_TESTNET.chainId,
+      ARC_MAINNET.rpcUrl,
+      ARC_MAINNET.chainId,
       {
         staticNetwork: true,
       }
     );
-  
-  
+
+
   /*
    * ------------------------------------------------------------
    * READ-ONLY LAUNCH FACTORY
    * ------------------------------------------------------------
    */
-  
+
   const launchFactory =
     new Contract(
-      ARC_TESTNET_CONTRACTS.launchFactory,
+      ARC_MAINNET_CONTRACTS.launchFactory,
       LAUNCH_FACTORY_ABI,
       provider
     );
-  
-  
+
+
   /*
    * ------------------------------------------------------------
    * RPC RETRY
    * ------------------------------------------------------------
    */
-  
+
   function sleep(ms) {
     return new Promise(
       (resolve) =>
         setTimeout(resolve, ms)
     );
   }
-  
-  
+
+
   async function withRpcRetry(
     operation,
     {
@@ -88,7 +88,7 @@ import {
     } = {}
   ) {
     let lastError;
-  
+
     for (
       let attempt = 1;
       attempt <= attempts;
@@ -98,13 +98,13 @@ import {
         return await operation();
       } catch (error) {
         lastError = error;
-  
+
         if (attempt === attempts) {
           break;
         }
-  
+
         /*
-         * ARC Testnet RPC occasionally
+         * ARC Mainnet RPC occasionally
          * returns transient eth_call errors.
          *
          * Read calls are safe to retry.
@@ -114,17 +114,17 @@ import {
         );
       }
     }
-  
+
     throw lastError;
   }
-  
-  
+
+
   /*
    * ------------------------------------------------------------
    * BASIC HELPERS
    * ------------------------------------------------------------
    */
-  
+
   function formatTokenAmount(
     value,
     decimals = 18
@@ -134,24 +134,24 @@ import {
       decimals
     );
   }
-  
-  
+
+
   function formatQuoteAmount(
     value
   ) {
     return formatUnits(
       value,
-      ARC_TESTNET.nativeCurrency.decimals
+      ARC_MAINNET.nativeCurrency.decimals
     );
   }
-  
-  
+
+
   /*
    * ------------------------------------------------------------
    * GET TOTAL LAUNCH COUNT
    * ------------------------------------------------------------
    */
-  
+
   export async function getTotalFairLaunches() {
     return withRpcRetry(
       () =>
@@ -167,13 +167,410 @@ import {
  * ------------------------------------------------------------
  */
 
+  /*
+ * ------------------------------------------------------------
+ * GET PLATFORM TRADE STATS
+ * ------------------------------------------------------------
+ *
+ * Reads every FairTokenBought / FairTokenSold event emitted by
+ * the ARC Mainnet LaunchFactory.
+ *
+ * LaunchFactory deployment block:
+ * 21,313,737
+ *
+ * Returns:
+ * - total transaction count
+ * - cumulative quote volume
+ * - cumulative quote volume by token
+ *
+ * BUY volume  = FairTokenBought.quoteAmount
+ * SELL volume = FairTokenSold.quoteOut
+ */
+
+const LAUNCH_FACTORY_DEPLOYMENT_BLOCK =
+21313737;
+
+const PLATFORM_LOG_CHUNK_SIZE =
+1000;
+
+const PLATFORM_STATS_CACHE_KEY =
+  "arc_terminal_mainnet_platform_stats_v1";
+
+  let platformTradeStatsPromise =
+  null;
+
+async function loadPlatformTradeStats() {
+    /*
+     * ----------------------------------------------------------
+     * READ LOCAL CHECKPOINT
+     * ----------------------------------------------------------
+     */
+
+    let cachedState = null;
+
+    try {
+      const raw =
+        localStorage.getItem(
+          PLATFORM_STATS_CACHE_KEY
+        );
+
+      if (raw) {
+        const parsed =
+          JSON.parse(raw);
+
+        if (
+          Number.isInteger(
+            parsed?.lastScannedBlock
+          ) &&
+          parsed.lastScannedBlock >=
+            LAUNCH_FACTORY_DEPLOYMENT_BLOCK
+        ) {
+          cachedState =
+            parsed;
+        }
+      }
+    } catch (error) {
+      console.warn(
+        "Failed to read platform stats cache:",
+        error
+      );
+    }
+
+
+    let totalTxns =
+      cachedState?.totalTxns ?? 0;
+
+    let totalVolumeRaw =
+      BigInt(
+        cachedState?.totalVolumeRaw ??
+        "0"
+      );
+
+
+    const volumeByToken =
+      new Map(
+        Object.entries(
+          cachedState?.volumeByToken ??
+          {}
+        ).map(
+          ([
+            tokenAddress,
+            volumeRaw,
+          ]) => [
+            tokenAddress,
+            BigInt(volumeRaw),
+          ]
+        )
+      );
+
+
+    /*
+     * ----------------------------------------------------------
+     * FIND INCREMENTAL RANGE
+     * ----------------------------------------------------------
+     */
+
+    const latestBlock =
+      await withRpcRetry(
+        () =>
+          provider.getBlockNumber()
+      );
+
+
+    const fromBlock =
+      cachedState
+        ? cachedState.lastScannedBlock +
+          1
+        : LAUNCH_FACTORY_DEPLOYMENT_BLOCK;
+
+
+    /*
+     * Cache is already current.
+     */
+    if (
+      fromBlock >
+      latestBlock
+    ) {
+      return {
+        totalTxns,
+
+        totalVolumeRaw,
+
+        totalVolume:
+          Number(
+            formatQuoteAmount(
+              totalVolumeRaw
+            )
+          ),
+
+        volumeByToken,
+
+        lastScannedBlock:
+          cachedState
+            ?.lastScannedBlock ??
+          latestBlock,
+      };
+    }
+
+
+    const buyTopic =
+      launchFactory.interface
+        .getEvent(
+          "FairTokenBought"
+        )
+        .topicHash;
+
+
+    const sellTopic =
+      launchFactory.interface
+        .getEvent(
+          "FairTokenSold"
+        )
+        .topicHash;
+
+
+    /*
+     * ----------------------------------------------------------
+     * SCAN ONLY UNSCANNED BLOCKS
+     * ----------------------------------------------------------
+     */
+
+    let lastScannedBlock =
+      cachedState
+        ?.lastScannedBlock ??
+      (
+        LAUNCH_FACTORY_DEPLOYMENT_BLOCK -
+        1
+      );
+
+
+    for (
+      let chunkStart =
+        fromBlock;
+
+      chunkStart <= latestBlock;
+
+      chunkStart +=
+        PLATFORM_LOG_CHUNK_SIZE
+    ) {
+      const chunkEnd =
+        Math.min(
+          chunkStart +
+            PLATFORM_LOG_CHUNK_SIZE -
+            1,
+
+          latestBlock
+        );
+
+
+      const logs =
+        await withRpcRetry(
+          () =>
+            provider.getLogs({
+              address:
+                ARC_MAINNET_CONTRACTS
+                  .launchFactory,
+
+              fromBlock:
+                chunkStart,
+
+              toBlock:
+                chunkEnd,
+
+              topics: [
+                [
+                  buyTopic,
+                  sellTopic,
+                ],
+              ],
+            }),
+          {
+            attempts: 3,
+            delayMs: 500,
+          }
+        );
+
+
+      for (const log of logs) {
+        let parsedLog;
+
+        try {
+          parsedLog =
+            launchFactory.interface
+              .parseLog(log);
+        } catch {
+          continue;
+        }
+
+
+        if (!parsedLog) {
+          continue;
+        }
+
+
+        let quoteAmount =
+          0n;
+
+
+        if (
+          parsedLog.name ===
+          "FairTokenBought"
+        ) {
+          quoteAmount =
+            BigInt(
+              parsedLog.args
+                .quoteAmount
+            );
+        } else if (
+          parsedLog.name ===
+          "FairTokenSold"
+        ) {
+          quoteAmount =
+            BigInt(
+              parsedLog.args
+                .quoteOut
+            );
+        } else {
+          continue;
+        }
+
+
+        const tokenAddress =
+          String(
+            parsedLog.args.token
+          ).toLowerCase();
+
+
+        totalTxns += 1;
+
+        totalVolumeRaw +=
+          quoteAmount;
+
+
+        volumeByToken.set(
+          tokenAddress,
+          (
+            volumeByToken.get(
+              tokenAddress
+            ) ?? 0n
+          ) + quoteAmount
+        );
+      }
+
+
+      /*
+       * IMPORTANT:
+       *
+       * Persist every successful chunk.
+       *
+       * If ARC RPC rate-limits a later chunk,
+       * the next reload continues here instead
+       * of restarting from deployment.
+       */
+
+      lastScannedBlock =
+        chunkEnd;
+
+
+      try {
+        localStorage.setItem(
+          PLATFORM_STATS_CACHE_KEY,
+          JSON.stringify({
+            lastScannedBlock,
+
+            totalTxns,
+
+            totalVolumeRaw:
+              totalVolumeRaw.toString(),
+
+            volumeByToken:
+              Object.fromEntries(
+                Array.from(
+                  volumeByToken.entries()
+                ).map(
+                  ([
+                    tokenAddress,
+                    volumeRaw,
+                  ]) => [
+                    tokenAddress,
+                    volumeRaw.toString(),
+                  ]
+                )
+              ),
+          })
+        );
+      } catch (error) {
+        console.warn(
+          "Failed to save platform stats cache:",
+          error
+        );
+      }
+
+
+      if (
+        chunkEnd <
+        latestBlock
+      ) {
+        await sleep(150);
+      }
+    }
+
+
+    return {
+      totalTxns,
+
+      totalVolumeRaw,
+
+      totalVolume:
+        Number(
+          formatQuoteAmount(
+            totalVolumeRaw
+          )
+        ),
+
+      volumeByToken,
+
+      lastScannedBlock,
+    };
+  }
+
+  export async function getPlatformTradeStats() {
+    /*
+     * SINGLE FLIGHT
+     *
+     * Multiple UI consumers may request platform
+     * statistics at the same time.
+     *
+     * They must share one RPC scan instead of
+     * starting duplicate eth_getLogs scans.
+     */
+
+    if (
+      platformTradeStatsPromise
+    ) {
+      return platformTradeStatsPromise;
+    }
+
+
+    platformTradeStatsPromise =
+      loadPlatformTradeStats();
+
+
+    try {
+      return await platformTradeStatsPromise;
+    } finally {
+      platformTradeStatsPromise =
+        null;
+    }
+  }
+
   export async function getLaunchTradeCounts(
     launchId,
     launchTransactionHash = null
   ) {
     const id =
       BigInt(launchId);
-  
+
     /*
      * ----------------------------------------------------------
      * FIND START BLOCK
@@ -185,9 +582,9 @@ import {
      * Fallback:
      * only inspect a recent window.
      */
-  
+
     let fromBlock;
-  
+
     if (launchTransactionHash) {
       const receipt =
         await withRpcRetry(
@@ -196,13 +593,13 @@ import {
               launchTransactionHash
             )
         );
-  
+
       if (!receipt) {
         throw new Error(
           "Launch transaction receipt unavailable."
         );
       }
-  
+
       fromBlock =
         receipt.blockNumber;
     } else {
@@ -211,56 +608,56 @@ import {
           () =>
             provider.getBlockNumber()
         );
-  
+
       fromBlock =
         Math.max(
           0,
           latestBlock - 5000
         );
     }
-  
-  
+
+
     const latestBlock =
       await withRpcRetry(
         () =>
           provider.getBlockNumber()
       );
-  
-  
+
+
     /*
      * ----------------------------------------------------------
      * EVENT TOPICS
      * ----------------------------------------------------------
      */
-  
+
     const buyTopic =
       launchFactory.interface
         .getEvent(
           "FairTokenBought"
         )
         .topicHash;
-  
+
     const sellTopic =
       launchFactory.interface
         .getEvent(
           "FairTokenSold"
         )
         .topicHash;
-  
-  
+
+
     /*
      * launchId is indexed => topics[1].
      *
      * Manual 32-byte uint256 encoding avoids
      * additional ABI work.
      */
-  
+
     const launchIdTopic =
       `0x${id
         .toString(16)
         .padStart(64, "0")}`;
-  
-  
+
+
     /*
      * ----------------------------------------------------------
      * PAGED LOG READ
@@ -272,14 +669,14 @@ import {
      * One request still captures BOTH
      * FairTokenBought and FairTokenSold.
      */
-  
+
     const LOG_CHUNK_SIZE =
       1000;
-  
+
     let buyCount = 0;
     let sellCount = 0;
-  
-  
+
+
     for (
       let chunkStart = fromBlock;
       chunkStart <= latestBlock;
@@ -292,28 +689,28 @@ import {
             1,
           latestBlock
         );
-  
-  
+
+
       const logs =
         await withRpcRetry(
           () =>
             provider.getLogs({
               address:
-                ARC_TESTNET_CONTRACTS
-                  .launchFactory,
-  
+                ARC_MAINNET_CONTRACTS
+                .launchFactory,
+
               fromBlock:
                 chunkStart,
-  
+
               toBlock:
                 chunkEnd,
-  
+
               topics: [
                 [
                   buyTopic,
                   sellTopic,
                 ],
-  
+
                 launchIdTopic,
               ],
             }),
@@ -322,20 +719,20 @@ import {
             delayMs: 500,
           }
         );
-  
-  
+
+
       for (const log of logs) {
         const topic0 =
           log.topics?.[0]
             ?.toLowerCase();
-  
+
         if (
           topic0 ===
           buyTopic.toLowerCase()
         ) {
           buyCount += 1;
         }
-  
+
         if (
           topic0 ===
           sellTopic.toLowerCase()
@@ -343,8 +740,8 @@ import {
           sellCount += 1;
         }
       }
-  
-  
+
+
       /*
        * Small pause between chunks.
        *
@@ -358,22 +755,22 @@ import {
         await sleep(150);
       }
     }
-  
-  
+
+
     return {
       buyCount,
       sellCount,
-  
+
       total:
         buyCount +
         sellCount,
     };
   }
-  
-  
+
+
   /*
    * ------------------------------------------------------------
-   * INTERNAL — READ ONE KNOWN LAUNCH
+   * INTERNAL â€” READ ONE KNOWN LAUNCH
    * ------------------------------------------------------------
    *
    * This intentionally does NOT call
@@ -384,7 +781,7 @@ import {
    * again for every launch would create
    * unnecessary RPC traffic.
    */
-  
+
   async function readFairLaunch(
     id,
     cachedLaunch = null
@@ -395,8 +792,8 @@ import {
           launchFactory
             .fairLaunches(id)
       );
-  
-  
+
+
     if (
       !launch?.token ||
       launch.token ===
@@ -406,8 +803,8 @@ import {
         `Fair Launch ${id} returned an invalid token address.`
       );
     }
-  
-  
+
+
     /*
     * ------------------------------------------------------------
     * IMMUTABLE TOKEN METADATA CACHE
@@ -505,8 +902,8 @@ import {
         decimals
         );
     }
-  
-  
+
+
     /*
      * Bonding progress:
      *
@@ -515,7 +912,7 @@ import {
      * Reduce bigint values before
      * converting to JavaScript Number.
      */
-  
+
     const progressBps =
       launch.bondingSupply > 0n
         ? (
@@ -524,112 +921,112 @@ import {
           ) /
           launch.bondingSupply
         : 0n;
-  
+
     const progressPercent =
       Number(progressBps) /
       100;
-  
-  
+
+
     return {
       launchId:
         id,
-  
+
       tokenAddress:
         launch.token,
-  
+
       creator:
         launch.creator,
-  
+
       name,
       symbol,
-  
+
       decimals:
         numericDecimals,
-  
+
       transactionCount:
         launch.transactionCount,
-  
+
       status:
         Number(launch.status),
-  
+
       statusLabel:
         getLaunchStatusLabel(
           launch.status
         ),
-  
+
       raw: {
         totalSupply:
           launch.totalSupply,
-  
+
         tokenTotalSupply,
-  
+
         bondingSupply:
           launch.bondingSupply,
-  
+
         liquiditySupply:
           launch.liquiditySupply,
-  
+
         tokensSold:
           launch.tokensSold,
-  
+
         quoteReserve:
           launch.quoteReserve,
-  
+
         transactionCount:
           launch.transactionCount,
       },
-  
+
       formatted: {
         totalSupply:
           formatTokenAmount(
             launch.totalSupply,
             numericDecimals
           ),
-  
+
         bondingSupply:
           formatTokenAmount(
             launch.bondingSupply,
             numericDecimals
           ),
-  
+
         liquiditySupply:
           formatTokenAmount(
             launch.liquiditySupply,
             numericDecimals
           ),
-  
+
         tokensSold:
           formatTokenAmount(
             launch.tokensSold,
             numericDecimals
           ),
-  
+
         quoteReserve:
           formatQuoteAmount(
             launch.quoteReserve
           ),
-  
+
         progressPercent,
       },
     };
   }
-  
-  
+
+
   /*
    * ------------------------------------------------------------
    * GET ONE LAUNCH
    * ------------------------------------------------------------
    */
-  
+
   export async function getFairLaunch(
     launchId
   ) {
     const id =
       BigInt(launchId);
-  
+
     const total =
       await getTotalFairLaunches();
-  
+
     if (
       id < 0n ||
       id >= total
@@ -638,31 +1035,31 @@ import {
         `Fair Launch ${id} does not exist.`
       );
     }
-  
+
     return readFairLaunch(id);
   }
-  
-  
+
+
   /*
    * ------------------------------------------------------------
    * GET ALL LAUNCHES
    * ------------------------------------------------------------
    */
-  
+
   export async function getAllFairLaunches(
     cachedLaunches = []
   ) {
     const total =
       await getTotalFairLaunches();
-  
+
     if (total === 0n) {
       return [];
     }
-  
-  
+
+
     const launches =
       [];
-  
+
       const cachedById =
       new Map(
         cachedLaunches.map(
@@ -680,7 +1077,7 @@ import {
      * One problematic launch must NOT
      * destroy the entire market list.
      */
-  
+
     for (
       let id = 0n;
       id < total;
@@ -691,13 +1088,13 @@ import {
         cachedById.get(
           String(id)
         ) || null;
-      
+
       const launch =
         await readFairLaunch(
           id,
           cachedLaunch
         );
-  
+
         launches.push(
           launch
         );
@@ -708,50 +1105,50 @@ import {
         );
       }
     }
-  
-  
+
+
     /*
      * If Factory reports launches but
      * absolutely none could be read,
      * surface a real RPC failure instead
      * of pretending the market is empty.
      */
-  
+
     if (
       total > 0n &&
       launches.length === 0
     ) {
       throw new Error(
-        "ARC Testnet RPC could not read any Fair Launch after retries."
+        "ARC Mainnet RPC could not read any Fair Launch after retries."
       );
     }
-  
-  
+
+
     return launches;
   }
-  
-  
+
+
   /*
    * ------------------------------------------------------------
    * EXPLORER HELPERS
    * ------------------------------------------------------------
    */
-  
+
   export function getTokenExplorerUrl(
     tokenAddress
   ) {
     return (
-      `${ARC_TESTNET.blockExplorerUrl}` +
+      `${ARC_MAINNET.blockExplorerUrl}` +
       `/address/${tokenAddress}`
     );
   }
-  
-  
+
+
   export function getAddressExplorerUrl(
     address
   ) {
     return (
-      `${ARC_TESTNET.blockExplorerUrl}` +
+      `${ARC_MAINNET.blockExplorerUrl}` +
       `/address/${address}`
     );
   }

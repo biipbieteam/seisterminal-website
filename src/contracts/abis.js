@@ -84,7 +84,7 @@ export const LAUNCH_FACTORY_ABI =
     /*
      * WRITE — public BUY
      *
-     * Native ARC Testnet USDC is supplied
+     * Native ARC Mainnet USDC is supplied
      * through msg.value.
      */
     "function buyFairToken(uint256 launchId_, uint256 minTokensOut_) payable returns (uint256 tokensOut)",

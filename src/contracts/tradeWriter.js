@@ -7,12 +7,11 @@ import {
   } from "ethers";
   
   
-  const ARC_TESTNET_CHAIN_ID =
-    5042002n;
-  
-  
+  const ARC_MAINNET_CHAIN_ID =
+    5042n;
+
   const LAUNCH_FACTORY_ADDRESS =
-    "0x8Da50245171d09a544eb047fc3d4e8cE4514931A";
+    "0x56FC882244f8FB1d05C2171d180872B38800706F";
   
   
   const LAUNCH_FACTORY_ABI = [
@@ -116,8 +115,8 @@ import {
     throw lastError;
   }
   /*
-   * ARC Testnet RPC has occasionally returned
-   * HTTP 408 / temporary receipt read errors.
+  * ARC Mainnet RPC may return
+  * HTTP 408 / temporary receipt read errors.
    *
    * IMPORTANT:
    *
@@ -260,10 +259,10 @@ import {
   
     if (
       chainId !==
-      ARC_TESTNET_CHAIN_ID
+      ARC_MAINNET_CHAIN_ID
     ) {
       throw new Error(
-        "Switch wallet to ARC Testnet before trading."
+        "Switch wallet to ARC Mainnet before trading."
       );
     }
   
@@ -459,8 +458,9 @@ import {
       ) /
       10_000n;
   
+
     /*
-    * ARC Testnet may briefly expose
+    * ARC Mainnet may briefly expose
     * stale state immediately after
     * the previous confirmed trade.
     *

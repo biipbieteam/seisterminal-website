@@ -7,11 +7,11 @@ import {
     formatUnits,
   } from "ethers";
   
-  const ARC_TESTNET_CHAIN_ID =
-    5042002n;
-  
+  const ARC_MAINNET_CHAIN_ID =
+    5042n;
+
   const LAUNCH_FACTORY_ADDRESS =
-    "0x8Da50245171d09a544eb047fc3d4e8cE4514931A";
+    "0x56FC882244f8FB1d05C2171d180872B38800706F";
   
   const LAUNCH_FACTORY_ABI = [
     "function launchFairToken(string name_, string symbol_) payable returns (uint256 launchId, address tokenAddress)",
@@ -176,10 +176,10 @@ import {
   
     if (
       currentChainId !==
-      ARC_TESTNET_CHAIN_ID
+      ARC_MAINNET_CHAIN_ID
     ) {
       throw new Error(
-        "Switch wallet to ARC Testnet before launching."
+        "Switch wallet to ARC Mainnet before launching."
       );
     }
   
@@ -486,5 +486,5 @@ import {
   
   export {
     LAUNCH_FACTORY_ADDRESS,
-    ARC_TESTNET_CHAIN_ID,
+    ARC_MAINNET_CHAIN_ID,
   };

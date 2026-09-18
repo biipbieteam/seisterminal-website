@@ -8,7 +8,6 @@ import {
     WalletContext,
   } from "./wallet-context";
   import {
-    ARC_TESTNET,
     ARC_MAINNET,
   } from "../lib/arcNetwork";
   
@@ -32,10 +31,6 @@ import {
     const connected = Boolean(
       selectedProvider && address
     );
-
-    const isArcTestnet =
-    chainId?.toLowerCase() ===
-    ARC_TESTNET.chainId.toLowerCase();
 
     const isArcMainnet =
     chainId?.toLowerCase() ===
@@ -362,65 +357,6 @@ import {
     };
 
 
-    const switchToArcTestnet = async () => {
-        setWalletError("");
-      
-        if (!selectedProvider?.provider) {
-          setWalletError(
-            "Wallet provider unavailable."
-          );
-      
-          return {
-            success: false,
-            needsAdd: false,
-          };
-        }
-      
-        try {
-          await selectedProvider.provider.request({
-            method: "wallet_switchEthereumChain",
-            params: [
-              {
-                chainId: ARC_TESTNET.chainId,
-              },
-            ],
-          });
-      
-          return {
-            success: true,
-            needsAdd: false,
-          };
-        } catch (error) {
-          console.error(
-            "Network switch failed:",
-            error
-          );
-      
-          // MetaMask: requested chain does not exist
-          if (error?.code === 4902) {
-            return {
-              success: false,
-              needsAdd: true,
-            };
-          }
-      
-          if (error?.code === 4001) {
-            setWalletError(
-              "Network switch was rejected."
-            );
-          } else {
-            setWalletError(
-              "Unable to switch network."
-            );
-          }
-      
-          return {
-            success: false,
-            needsAdd: false,
-          };
-        }
-    };
-
     const switchToArcMainnet = async () => {
       setWalletError("");
     
@@ -477,53 +413,6 @@ import {
           needsAdd: false,
         };
       }
-    };
-
-    const addArcTestnet = async () => {
-        setWalletError("");
-      
-        if (!selectedProvider?.provider) {
-          setWalletError(
-            "Wallet provider unavailable."
-          );
-      
-          return false;
-        }
-      
-        try {
-          await selectedProvider.provider.request({
-            method: "wallet_addEthereumChain",
-            params: [
-              {
-                chainId: ARC_TESTNET.chainId,
-                chainName: ARC_TESTNET.chainName,
-                nativeCurrency: ARC_TESTNET.nativeCurrency,
-                rpcUrls: ARC_TESTNET.rpcUrls,
-                blockExplorerUrls:
-                  ARC_TESTNET.blockExplorerUrls,
-              },
-            ],
-          });
-      
-          return true;
-        } catch (error) {
-          console.error(
-            "Add ARC Testnet failed:",
-            error
-          );
-      
-          if (error?.code === 4001) {
-            setWalletError(
-              "Adding ARC Testnet was rejected."
-            );
-          } else {
-            setWalletError(
-              "Unable to add ARC Testnet."
-            );
-          }
-      
-          return false;
-        }
     };
 
     const addArcMainnet = async () => {
@@ -684,14 +573,11 @@ import {
       
           address,
           chainId,
-          isArcTestnet,
           isArcMainnet,
       
           walletError,
       
           connectProvider,
-          switchToArcTestnet,
-          addArcTestnet,
           switchToArcMainnet,
           addArcMainnet,
           disconnectWallet,
@@ -705,7 +591,6 @@ import {
           connecting,
           address,
           chainId,
-          isArcTestnet,
           isArcMainnet,
           walletError,
         ]

@@ -95,7 +95,7 @@ function LitepaperPage() {
               </span>
 
               <strong>
-                ARC TESTNET
+                ARC MAINNET
               </strong>
             </div>
 
@@ -732,7 +732,7 @@ function LitepaperPage() {
               </span>
 
               <strong>
-                0x8Da50245171d09a544eb047fc3d4e8cE4514931A
+                0x56FC882244f8FB1d05C2171d180872B38800706F
               </strong>
             </div>
           </div>

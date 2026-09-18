@@ -1,6 +1,6 @@
 import { supabase } from "./supabase";
 
-const ARC_TESTNET_CHAIN_ID = 5042002;
+const ARC_MAINNET_CHAIN_ID = 5042;
 
 /*
  * --------------------------------------------------
@@ -242,12 +242,12 @@ export async function saveLaunchMetadata({
   const formData =
     new FormData();
 
-  formData.append(
-    "chainId",
-    String(
-      ARC_TESTNET_CHAIN_ID,
-    ),
-  );
+    formData.append(
+      "chainId",
+      String(
+        ARC_MAINNET_CHAIN_ID,
+      ),
+    );
 
   formData.append(
     "launchId",
