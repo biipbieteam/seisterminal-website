@@ -715,7 +715,7 @@ function App() {
     value
   ) => {
     if (!value) {
-      return "â€”";
+      return "—";
     }
 
     return `${value.slice(
@@ -732,7 +732,7 @@ function App() {
       rawValue === null ||
       rawValue === undefined
     ) {
-      return "â€”";
+      return "—";
     }
 
     try {
@@ -760,7 +760,7 @@ function App() {
         }
       );
     } catch {
-      return "â€”";
+      return "—";
     }
   };
 
@@ -769,7 +769,7 @@ function App() {
     timestamp
   ) => {
     if (!timestamp) {
-      return "â€”";
+      return "—";
     }
 
     const seconds =
@@ -1712,7 +1712,7 @@ const chartPolyline =
       timestamp
     ) => {
       if (!timestamp) {
-        return "â€”";
+        return "—";
       }
 
       return new Date(
@@ -1932,7 +1932,7 @@ const chartPolyline =
 
       const formattedPriceChange =
         statsPriceChange === null
-          ? "â€”"
+          ? "—"
           : `${statsPriceChange >= 0
               ? "+"
               : ""
@@ -3156,7 +3156,7 @@ useEffect(() => {
     timestamp
   ) => {
     if (!timestamp) {
-      return "â€”";
+      return "—";
     }
 
     return new Date(
@@ -3461,7 +3461,7 @@ useEffect(() => {
               }}
             >
               <span className="sidebar-nav-icon">
-                â—‡
+                ◇
               </span>
 
               <span>
@@ -3490,7 +3490,7 @@ useEffect(() => {
               className="sidebar-nav-item"
             >
               <span className="sidebar-nav-icon">
-                â†”
+                ↔
               </span>
 
               <span className="sidebar-nav-label">
@@ -3515,7 +3515,7 @@ useEffect(() => {
               }}
             >
               <span className="sidebar-nav-icon">
-                â–¤
+                ▤
               </span>
 
               <span>
@@ -3535,7 +3535,7 @@ useEffect(() => {
               }}
             >
               <span className="sidebar-nav-icon">
-                â–¡
+                □
               </span>
 
               <span>
@@ -4248,7 +4248,7 @@ useEffect(() => {
                       >
                         {copiedTokenAddress ===
                         launch.tokenAddress
-                          ? "COPIED âœ“"
+                          ? "COPIED ✓"
                           : "COPY"}
                       </button>
                     </div>
@@ -4293,7 +4293,7 @@ useEffect(() => {
                     <span>
                       {launch.statusLabel === "GRADUATED"
                         ? "DEX"
-                        : "â€”"}
+                        : "—"}
                     </span>
                   </div>
                 );
@@ -4320,7 +4320,7 @@ useEffect(() => {
                         onClick={() => setLaunchOpen(false)}
                         aria-label="Close launch modal"
                       >
-                        Ã—
+                        ×
                       </button>
                     </div>
 
@@ -4428,7 +4428,7 @@ useEffect(() => {
                         </div>
 
 
-                        {/* RIGHT COLUMN â€” TOKEN LOGO */}
+                        {/* RIGHT COLUMN — TOKEN LOGO */}
                         <div className="launch-logo-column">
                           <span className="launch-type-label">
                             TOKEN LOGO (REQUIRED)
@@ -4456,7 +4456,7 @@ useEffect(() => {
                                     setTokenLogoPreview("");
                                   }}
                                 >
-                                  Ã—
+                                  ×
                                 </button>
                               </div>
                             ) : (
@@ -4470,7 +4470,7 @@ useEffect(() => {
                             )}
 
                             <label className="token-logo-button">
-                              â†‘ CHOOSE IMAGE
+                              ↑ CHOOSE IMAGE
 
                               <input
                                 type="file"
@@ -4496,7 +4496,7 @@ useEffect(() => {
                               </span>
 
                               <span>
-                                (300 Ã— 300)
+                                (300 × 300)
                               </span>
                             </div>
 
@@ -4665,7 +4665,7 @@ useEffect(() => {
                           setWalletModalOpen(false)
                         }
                       >
-                        Ã—
+                        ×
                       </button>
                     </div>
 
@@ -4756,7 +4756,7 @@ useEffect(() => {
                         }
                         aria-label="Close account modal"
                       >
-                        Ã—
+                        ×
                       </button>
                     </div>
 
@@ -4789,15 +4789,15 @@ useEffect(() => {
                         }
                       >
                         {isArcMainnet
-                          ? "â— ARC MAINNET"
-                          : "â— WRONG NETWORK"}
+                          ? "● ARC MAINNET"
+                          : "● WRONG NETWORK"}
                       </strong>
 
                       <small className="network-chain-id">
                         Current Chain ID:{" "}
                         {chainId
                           ? parseInt(chainId, 16)
-                          : "â€”"}
+                          : "—"}
                       </small>
                     </div>
 
@@ -4932,7 +4932,7 @@ useEffect(() => {
                             >
                               {copiedTokenAddress ===
                               selectedLaunch.tokenAddress
-                                ? "COPIED âœ“"
+                                ? "COPIED ✓"
                                 : "COPY"}
                             </button>
 
@@ -4957,7 +4957,7 @@ useEffect(() => {
                           setSelectedLaunch(null);
                         }}
                       >
-                        Ã—
+                        ×
                       </button>
                     </div>
 
@@ -5271,7 +5271,7 @@ useEffect(() => {
                                               )}...${trade.transaction_hash.slice(
                                                 -4
                                               )}`
-                                            : "â€”"}
+                                            : "—"}
                                         </a>
                                       </div>
                                     )
@@ -5623,14 +5623,14 @@ useEffect(() => {
                                 )}...${selectedLaunch.creator.slice(
                                   -4
                                 )}`
-                              : "â€”"}
+                              : "—"}
                           </strong>
                         </div>
 
                         <div className="trade-box">
                           <div className="trade-progress-row">
                             <strong>MC $10K</strong>
-                            <span>â†’</span>
+                            <span>→</span>
                             <strong>$60K</strong>
                           </div>
 
@@ -5660,7 +5660,7 @@ useEffect(() => {
                       onClick={() => setGenesisDropOpen(false)}
                       aria-label="Close Genesis Drop"
                     >
-                      Ã—
+                      ×
                     </button>
 
                     {genesisDropView === "details" ? (
@@ -6163,7 +6163,7 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.teamStart
                                 )
-                              : "â€”"}
+                              : "—"}
                           </span>
 
                           <span className="genesis-phase-date">
@@ -6172,7 +6172,7 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.teamEnd
                                 )
-                              : "â€”"}
+                              : "—"}
                           </span>
 
                           <code>
@@ -6201,7 +6201,7 @@ useEffect(() => {
                                 genesisMintQuantity <= 1
                               }
                             >
-                              âˆ’
+                              −
                             </button>
 
                             <span>
@@ -6320,7 +6320,7 @@ useEffect(() => {
                               }
                             >
                               {genesisCountOpen.og
-                                ? `[${genesisWhitelistCounts.og ?? "â€”"}]`
+                                ? `[${genesisWhitelistCounts.og ?? "—"}]`
                                 : "[ADDRESS]"}
                             </button>
                           </div>
@@ -6331,7 +6331,7 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.ogStart
                                 )
-                              : "â€”"}
+                              : "—"}
                           </span>
 
                           <span className="genesis-phase-date">
@@ -6340,7 +6340,7 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.ogEnd
                                 )
-                              : "â€”"}
+                              : "—"}
                           </span>
 
                           <code>
@@ -6356,7 +6356,7 @@ useEffect(() => {
                               type="button"
                               disabled
                             >
-                              âˆ’
+                              −
                             </button>
 
                             <span>
@@ -6460,7 +6460,7 @@ useEffect(() => {
                               }
                             >
                               {genesisCountOpen.fcfs
-                                ? `[${genesisWhitelistCounts.fcfs ?? "â€”"}]`
+                                ? `[${genesisWhitelistCounts.fcfs ?? "—"}]`
                                 : "[ADDRESS]"}
                             </button>
                           </div>
@@ -6471,7 +6471,7 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.fcfsStart
                                 )
-                              : "â€”"}
+                              : "—"}
                           </span>
 
                           <span className="genesis-phase-date">
@@ -6480,13 +6480,13 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.fcfsEnd
                                 )
-                              : "â€”"}
+                              : "—"}
                           </span>
 
                           <code>
                             {genesisState
                               ? `${genesisState.fcfsPrice} USDC`
-                              : "â€” USDC"}{" "}
+                              : "— USDC"}{" "}
                             | LIMIT 2 PER WALLET
                           </code>
 
@@ -6512,7 +6512,7 @@ useEffect(() => {
                                 genesisFcfsQuantity <= 1
                               }
                             >
-                              âˆ’
+                              −
                             </button>
 
                             <span>
@@ -6628,7 +6628,7 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.publicStart
                                 )
-                              : "â€”"}
+                              : "—"}
                           </span>
 
                           <span className="genesis-phase-date">
@@ -6637,13 +6637,13 @@ useEffect(() => {
                               ? formatGenesisTime(
                                   genesisState.publicEnd
                                 )
-                              : "â€”"}
+                              : "—"}
                           </span>
 
                           <code>
                             {genesisState
                               ? `${genesisState.publicPrice} USDC`
-                              : "â€” USDC"}{" "}
+                              : "— USDC"}{" "}
                             | LIMIT 2 PER WALLET
                           </code>
 
@@ -6669,7 +6669,7 @@ useEffect(() => {
                                 genesisPublicQuantity <= 1
                               }
                             >
-                              âˆ’
+                              −
                             </button>
 
                             <span>
@@ -6791,7 +6791,7 @@ useEffect(() => {
               }
               aria-label="Close"
             >
-              Ã—
+              ×
             </button>
 
 
@@ -6845,7 +6845,7 @@ useEffect(() => {
                 </div>
 
                 <div className="genesis-tx-success-icon">
-                  âœ“
+                  ✓
                 </div>
 
                 <div className="genesis-tx-toast-copy">
@@ -6901,7 +6901,7 @@ useEffect(() => {
               "error" && (
               <>
                 <div className="genesis-tx-error-icon">
-                  Ã—
+                  ×
                 </div>
 
                 <div className="genesis-tx-toast-copy">

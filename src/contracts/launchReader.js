@@ -1,4 +1,4 @@
-import {
+﻿import {
     Contract,
     JsonRpcProvider,
     formatUnits,
@@ -770,7 +770,7 @@ async function loadPlatformTradeStats() {
 
   /*
    * ------------------------------------------------------------
-   * INTERNAL â€” READ ONE KNOWN LAUNCH
+   * INTERNAL — READ ONE KNOWN LAUNCH
    * ------------------------------------------------------------
    *
    * This intentionally does NOT call

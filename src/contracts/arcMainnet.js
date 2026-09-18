@@ -1,7 +1,7 @@
-/*
+﻿/*
  * ============================================================
  * ARC TERMINAL
- * ARC Mainnet â€” Frontend Contract Configuration
+ * ARC Mainnet — Frontend Contract Configuration
  * ============================================================
  *
  * This file contains PUBLIC blockchain configuration only.
@@ -48,16 +48,16 @@ export const ARC_MAINNET = Object.freeze({
    * ------------------------------------------------------------
    *
    * Deployment:
-   * ARC Mainnet â€” chain ID 5042
+   * ARC Mainnet — chain ID 5042
    *
    * Dependency graph:
    *
    * Uniswap V2 Factory
-   *      â†“
+   *      ↓
    * UniswapV2AMMFactory
-   *      â†“
+   *      ↓
    * MigrationAdapter
-   *      â†“
+   *      ↓
    * LaunchFactory
    */
 
