@@ -4,6 +4,7 @@ import {
 } from "./context/wallet-context";
 import {
   getAllFairLaunches,
+  refreshFairLaunch,
   getTokenExplorerUrl,
 } from "./contracts/launchReader.js";
 import {
@@ -622,6 +623,97 @@ function App() {
         false
       );
     }
+  };
+
+  const refreshSingleLaunch =
+  async (
+    currentLaunch
+  ) => {
+    if (
+      !currentLaunch
+    ) {
+      return null;
+    }
+
+    const updatedLaunch =
+      await refreshFairLaunch(
+        currentLaunch.launchId,
+        currentLaunch
+      );
+
+    /*
+     * Preserve supplementary off-chain
+     * metadata already attached to the
+     * cached market item.
+     */
+    const enrichedLaunch = {
+      ...currentLaunch,
+      ...updatedLaunch,
+
+      logoUrl:
+        currentLaunch.logoUrl ||
+        null,
+
+      launchTransactionHash:
+        currentLaunch
+          .launchTransactionHash ||
+        null,
+    };
+
+
+    /*
+     * Update only the traded token.
+     *
+     * Do NOT reload the entire market.
+     */
+    setLiveLaunches(
+      (currentLaunches) => {
+        const nextLaunches =
+          currentLaunches.map(
+            (launch) =>
+              String(
+                launch.launchId
+              ) ===
+              String(
+                enrichedLaunch.launchId
+              )
+                ? enrichedLaunch
+                : launch
+          );
+
+        saveLaunchCache(
+          nextLaunches
+        );
+
+        return nextLaunches;
+      }
+    );
+
+
+    /*
+     * Keep the open trade modal attached
+     * to the refreshed on-chain state.
+     */
+    setSelectedLaunch(
+      (selected) => {
+        if (
+          !selected ||
+          String(
+            selected.launchId
+          ) !==
+          String(
+            enrichedLaunch.launchId
+          )
+        ) {
+          return selected;
+        }
+
+        return enrichedLaunch;
+      }
+    );
+
+
+    return enrichedLaunch;
   };
 
   const showGenesisToast = (
@@ -1474,7 +1566,9 @@ useEffect(() => {
        * Refresh ancillary UI independently.
        */
       await Promise.allSettled([
-        refreshLaunches(),
+        refreshSingleLaunch(
+          selectedLaunch
+        ),
 
         refreshTradeStats(
           selectedLaunch.launchId

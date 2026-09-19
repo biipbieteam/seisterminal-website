@@ -1,4 +1,4 @@
-﻿import {
+import {
     Contract,
     JsonRpcProvider,
     formatUnits,
@@ -79,44 +79,170 @@
     );
   }
 
+  /*
+ * ------------------------------------------------------------
+ * GLOBAL ARC RPC RATE-LIMIT GATE
+ * ------------------------------------------------------------
+ *
+ * All public ARC RPC reads pass through one shared gate.
+ *
+ * This prevents independent UI readers from creating
+ * request bursts against the public Mainnet endpoint.
+ */
 
-  async function withRpcRetry(
-    operation,
-    {
-      attempts = 3,
-      delayMs = 350,
-    } = {}
-  ) {
-    let lastError;
+  const RPC_MIN_INTERVAL_MS = 1000;
 
-    for (
-      let attempt = 1;
-      attempt <= attempts;
-      attempt++
-    ) {
-      try {
-        return await operation();
-      } catch (error) {
-        lastError = error;
+let rpcNextAllowedAt = 0;
 
-        if (attempt === attempts) {
-          break;
+let rpcGatePromise =
+  Promise.resolve();
+
+
+function waitForRpcGate() {
+  const task =
+    rpcGatePromise.then(
+      async () => {
+        const now =
+          Date.now();
+
+        const waitMs =
+          Math.max(
+            0,
+            rpcNextAllowedAt - now
+          );
+
+        if (waitMs > 0) {
+          await sleep(
+            waitMs
+          );
         }
 
-        /*
-         * ARC Mainnet RPC occasionally
-         * returns transient eth_call errors.
-         *
-         * Read calls are safe to retry.
-         */
-        await sleep(
-          delayMs * attempt
-        );
+        rpcNextAllowedAt =
+          Date.now() +
+          RPC_MIN_INTERVAL_MS;
       }
-    }
+    );
 
-    throw lastError;
+  /*
+   * Keep the queue alive even if an
+   * unexpected gate error occurs.
+   */
+  rpcGatePromise =
+    task.catch(
+      () => {}
+    );
+
+  return task;
+}
+
+
+function applyRpcCooldown(
+  cooldownMs
+) {
+  rpcNextAllowedAt =
+    Math.max(
+      rpcNextAllowedAt,
+      Date.now() +
+        cooldownMs
+    );
+}
+
+
+async function withRpcRetry(
+  operation,
+  {
+    attempts = 3,
+    delayMs = 350,
+  } = {}
+) {
+  let lastError;
+
+  for (
+    let attempt = 1;
+    attempt <= attempts;
+    attempt++
+  ) {
+    /*
+     * Every attempt must pass through
+     * the shared ARC RPC gate.
+     */
+    await waitForRpcGate();
+
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+
+      if (attempt === attempts) {
+        break;
+      }
+
+      const errorText =
+        String(
+          error?.message ||
+          error?.shortMessage ||
+          error?.info?.error?.message ||
+          error ||
+          ""
+        ).toLowerCase();
+
+      const status =
+        error?.status ??
+        error?.response?.status ??
+        error?.info?.status ??
+        null;
+
+      const isRateLimited =
+        status === 429 ||
+        errorText.includes("429") ||
+        errorText.includes(
+          "rate limit"
+        ) ||
+        errorText.includes(
+          "rate-limit"
+        ) ||
+        errorText.includes(
+          "too many requests"
+        );
+
+      if (isRateLimited) {
+        const backoffMs =
+        Math.min(
+          5000 *
+            2 ** (attempt - 1),
+          30000
+        );
+
+        const jitterMs =
+          Math.floor(
+            Math.random() * 500
+          );
+
+        const cooldownMs =
+          backoffMs +
+          jitterMs;
+
+        /*
+         * IMPORTANT:
+         *
+         * A 429 cools down the GLOBAL gate,
+         * not only this individual request.
+         */
+        applyRpcCooldown(
+          cooldownMs
+        );
+
+        continue;
+      }
+
+      await sleep(
+        delayMs * attempt
+      );
+    }
   }
+
+  throw lastError;
+}
 
 
   /*
@@ -198,6 +324,18 @@ const PLATFORM_STATS_CACHE_KEY =
 
   let platformTradeStatsPromise =
   null;
+
+  /*
+ * ------------------------------------------------------------
+ * FAIR LAUNCH MARKET SINGLE-FLIGHT
+ * ------------------------------------------------------------
+ *
+ * Prevent multiple UI consumers from starting
+ * the same full-market RPC scan at the same time.
+ */
+
+let allFairLaunchesPromise =
+null;
 
 async function loadPlatformTradeStats() {
     /*
@@ -1039,6 +1177,32 @@ async function loadPlatformTradeStats() {
     return readFairLaunch(id);
   }
 
+  /*
+ * ------------------------------------------------------------
+ * REFRESH ONE KNOWN LAUNCH
+ * ------------------------------------------------------------
+ *
+ * Used after a confirmed trade.
+ *
+ * The launch is already known to exist, so this intentionally
+ * skips totalFairLaunches() and refreshes only that launch.
+ *
+ * cachedLaunch allows immutable token metadata to be reused.
+ */
+
+export async function refreshFairLaunch(
+  launchId,
+  cachedLaunch = null
+) {
+  const id =
+    BigInt(launchId);
+
+  return readFairLaunch(
+    id,
+    cachedLaunch
+  );
+}
+
 
   /*
    * ------------------------------------------------------------
@@ -1046,7 +1210,7 @@ async function loadPlatformTradeStats() {
    * ------------------------------------------------------------
    */
 
-  export async function getAllFairLaunches(
+  async function loadAllFairLaunches(
     cachedLaunches = []
   ) {
     const total =
@@ -1126,6 +1290,38 @@ async function loadPlatformTradeStats() {
 
     return launches;
   }
+
+  /*
+ * ------------------------------------------------------------
+ * GET ALL LAUNCHES — SINGLE-FLIGHT WRAPPER
+ * ------------------------------------------------------------
+ *
+ * A full market refresh may require many ARC RPC reads.
+ *
+ * If multiple UI paths request the market while one refresh
+ * is already running, reuse the same Promise instead of
+ * starting another full RPC scan.
+ */
+
+export async function getAllFairLaunches(
+  cachedLaunches = []
+) {
+  if (allFairLaunchesPromise) {
+    return allFairLaunchesPromise;
+  }
+
+  allFairLaunchesPromise =
+    loadAllFairLaunches(
+      cachedLaunches
+    );
+
+  try {
+    return await allFairLaunchesPromise;
+  } finally {
+    allFairLaunchesPromise =
+      null;
+  }
+}
 
 
   /*
