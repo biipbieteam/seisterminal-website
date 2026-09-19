@@ -3696,52 +3696,6 @@ useEffect(() => {
 
         {activePage === "MARKET" && (
           <>
-            <section className="trending-section">
-              <div className="section-label">
-                PLATFORM STATS_
-              </div>
-
-              <div className="platform-stats-grid">
-
-                <div className="platform-stat-card">
-                  <span className="platform-stat-label">
-                    TOTAL TOKENS
-                  </span>
-
-                  <strong>
-                    {platformStats.totalTokens}
-                  </strong>
-                </div>
-
-                <div className="platform-stat-card">
-                  <span className="platform-stat-label">
-                    TOTAL VOLUME
-                  </span>
-
-                  <strong>
-                    $
-                    {platformStats.totalVolume.toLocaleString(
-                      undefined,
-                      {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      }
-                    )}
-                  </strong>
-                </div>
-
-                <div className="platform-stat-card">
-                  <span className="platform-stat-label">
-                    TOTAL TXNS
-                  </span>
-
-                  <strong>
-                    {platformStats.totalTxns}
-                  </strong>
-                </div>
-              </div>
-            </section>
-
             <section className="market">
 
             <div className="market-filter-bar">
