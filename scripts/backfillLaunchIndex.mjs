@@ -6,22 +6,27 @@ import {
   import { createClient } from "@supabase/supabase-js";
   
   import {
-    ARC_TESTNET,
-    ARC_TESTNET_CONTRACTS,
-  } from "../src/contracts/arcTestnet.js";
+    ARC_MAINNET,
+    ARC_MAINNET_CONTRACTS,
+  } from "../src/contracts/arcMainnet.js";
   
   import {
     LAUNCH_FACTORY_ABI,
     MEME_TOKEN_ABI,
   } from "../src/contracts/abis.js";
   
+  const LAUNCH_FACTORY_DEPLOYMENT_BLOCK =
+  21313737;
+
+  const FAIR_LAUNCH_CREATED_EVENT =
+  "event FairLaunchCreated(uint256 indexed launchId, address indexed token, address indexed creator, uint256 totalSupply, uint256 bondingSupply, uint256 liquiditySupply)";
   /*
    * ============================================================
    * SEIS TERMINAL
    * One-time Launch Index Backfill
    * ============================================================
-   *
-   * READ ONLY on ARC Testnet.
+  /*
+  * READ ONLY on ARC Mainnet.
    *
    * No wallet.
    * No private key.
@@ -63,8 +68,8 @@ import {
   
   const provider =
     new JsonRpcProvider(
-      ARC_TESTNET.rpcUrl,
-      ARC_TESTNET.chainId,
+      ARC_MAINNET.rpcUrl,
+      ARC_MAINNET.chainId,
       {
         staticNetwork: true,
       }
@@ -72,11 +77,82 @@ import {
   
   const launchFactory =
     new Contract(
-      ARC_TESTNET_CONTRACTS.launchFactory,
+      ARC_MAINNET_CONTRACTS.launchFactory,
       LAUNCH_FACTORY_ABI,
       provider
     );
   
+    const launchEventContract =
+    new Contract(
+      ARC_MAINNET_CONTRACTS.launchFactory,
+      [
+        FAIR_LAUNCH_CREATED_EVENT,
+      ],
+      provider
+    );
+  
+    async function getLaunchTransactionHash(
+      launchId
+    ) {
+      const filter =
+        launchEventContract.filters
+          .FairLaunchCreated(
+            launchId
+          );
+    
+      const latestBlock =
+        await retry(
+          () => provider.getBlockNumber()
+        );
+    
+      const CHUNK_SIZE =
+        1000;
+    
+      for (
+        let fromBlock =
+          LAUNCH_FACTORY_DEPLOYMENT_BLOCK;
+    
+        fromBlock <= latestBlock;
+    
+        fromBlock += CHUNK_SIZE
+      ) {
+        const toBlock =
+          Math.min(
+            fromBlock +
+              CHUNK_SIZE -
+              1,
+            latestBlock
+          );
+    
+        const events =
+          await retry(
+            () =>
+              launchEventContract.queryFilter(
+                filter,
+                fromBlock,
+                toBlock
+              )
+          );
+    
+        if (events.length > 0) {
+          if (events.length !== 1) {
+            throw new Error(
+              `Expected 1 FairLaunchCreated event for launch ${launchId}, found ${events.length}`
+            );
+          }
+    
+          return events[0]
+            .transactionHash;
+        }
+    
+        await sleep(80);
+      }
+    
+      throw new Error(
+        `FairLaunchCreated event not found for launch ${launchId}`
+      );
+    }
+
   function sleep(ms) {
     return new Promise(
       (resolve) =>
@@ -204,14 +280,18 @@ import {
             () =>
               token.totalSupply()
           );
-  
+
+        const transactionHash =
+          await getLaunchTransactionHash(
+            id
+          );    
         /*
          * Store uint256 values as decimal strings.
          * PostgreSQL numeric preserves exact values.
          */
         const row = {
           chain_id:
-            ARC_TESTNET.chainId,
+            ARC_MAINNET.chainId,
   
           launch_id:
             Number(id),
@@ -227,7 +307,10 @@ import {
   
           token_symbol:
             symbol,
-  
+          
+          transaction_hash:
+            transactionHash,
+
           decimals:
             Number(decimals),
   

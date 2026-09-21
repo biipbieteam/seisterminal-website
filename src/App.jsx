@@ -59,6 +59,8 @@ import {
   getGenesisWhitelistCounts,
 } from "./lib/genesisEligibility";
 
+import SwapPage from "./pages/SwapPage";
+
 import "./App.css";
 
 
@@ -3486,7 +3488,14 @@ useEffect(() => {
 
             <button
               type="button"
-              className="sidebar-nav-item"
+              className={
+                activePage === "SWAP"
+                  ? "sidebar-nav-item sidebar-nav-active"
+                  : "sidebar-nav-item"
+              }
+              onClick={() => {
+                setActivePage("SWAP");
+              }}
             >
               <span className="sidebar-nav-icon">
                 ↔
@@ -3494,9 +3503,6 @@ useEffect(() => {
 
               <span className="sidebar-nav-label">
                 SWAP
-                <small className="sidebar-soon">
-                  SOON
-                </small>
               </span>
             </button>
 
@@ -3791,15 +3797,6 @@ useEffect(() => {
           </div>
 
           <div className="market-table">
-            <div className="market-row market-header">
-              <span>TOKEN</span>
-              <span>MARKET CAP</span>
-              <span>TXNS</span>
-              <span>PRICE (USDC)</span>
-              <span>PROGRESS</span>
-              <span>LIQUIDITY</span>
-
-            </div>
 
             {launchesLoading && liveLaunches.length === 0 && (
               <div className="market-loading-layer">
@@ -3856,7 +3853,7 @@ useEffect(() => {
                   </div>
                 </div>
             )}
-
+            <div className="market-card-grid">
             {!launchesLoading &&
               !launchesError &&
               [...liveLaunches]
@@ -4096,153 +4093,145 @@ useEffect(() => {
                 const marketCap =
                   spotPrice * totalSupply;
 
-                return (
-                  <div
-                    className="market-row"
-                    key={`${marketFilter || "DEFAULT"}-${launch.launchId.toString()}`}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => {
-                      setSelectedLaunch(launch);
-                      setTradeSide("BUY");
-                      setTradeModalOpen(true);
-                    }}
-                    onKeyDown={(event) => {
-                      if (
-                        event.key === "Enter" ||
-                        event.key === " "
-                      ) {
-                        event.preventDefault();
-
+                  return (
+                    <div
+                      className="market-card"
+                      key={`${marketFilter || "DEFAULT"}-${launch.launchId.toString()}`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
                         setSelectedLaunch(launch);
                         setTradeSide("BUY");
                         setTradeModalOpen(true);
-                      }
-                    }}
-                  >
-                  <div className="market-token">
-                    <div className="token-icon">
-                    {launch.logoUrl ? (
-                      <img
-                        className="token-icon-image"
-                        src={launch.logoUrl}
-                        alt=""
-                        loading="lazy"
-                        decoding="async"
-                      />
-                    ) : null}
-
-                    <span
-                      className={
-                        launch.logoUrl
-                          ? "token-icon-fallback token-icon-fallback-hidden"
-                          : "token-icon-fallback"
-                      }
-                    >
-                      {launch.symbol
-                        .charAt(0)
-                        .toUpperCase()}
-                    </span>
-                    </div>
-
-                    <div>
-                      <strong>
-                        {launch.symbol}
-                      </strong>
-
-                      <small>
-                        {launch.name}
-                      </small>
-
-                      <div className="token-contract-row">
-                      <a
-                        className="token-contract-address"
-                        href={getTokenExplorerUrl(
-                          launch.tokenAddress
-                        )}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {shortAddress}
-                      </a>
-
-                      <button
-                        type="button"
-                        className={
-                          copiedTokenAddress ===
-                          launch.tokenAddress
-                            ? "token-copy-button token-copy-button-copied"
-                            : "token-copy-button"
+                      }}
+                      onKeyDown={(event) => {
+                        if (
+                          event.key === "Enter" ||
+                          event.key === " "
+                        ) {
+                          event.preventDefault();
+                  
+                          setSelectedLaunch(launch);
+                          setTradeSide("BUY");
+                          setTradeModalOpen(true);
                         }
-                        onClick={async (event) => {
-                          event.stopPropagation();
-
-                          await navigator.clipboard.writeText(
+                      }}
+                    >
+                      <div className="market-card-image">
+                        {launch.logoUrl ? (
+                          <img
+                            src={launch.logoUrl}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                          />
+                        ) : (
+                          <span className="market-card-image-fallback">
+                            {launch.symbol
+                              .charAt(0)
+                              .toUpperCase()}
+                          </span>
+                        )}
+                  
+                        <div className="market-card-progress">
+                          <span
+                            style={{
+                              width: `${Math.min(
+                                Math.max(progress, 0),
+                                100
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                  
+                      <div className="market-card-body">
+                        <div className="market-card-title">
+                          <strong>{launch.name}</strong>
+                  
+                          <span>${launch.symbol}</span>
+                        </div>
+                  
+                        <div className="market-card-mcap">
+                          <strong>
+                            $
+                            {marketCap >= 1_000_000_000
+                              ? `${(marketCap / 1_000_000_000)
+                                  .toFixed(1)
+                                  .replace(/\.0$/, "")}B`
+                              : marketCap >= 1_000_000
+                                ? `${(marketCap / 1_000_000)
+                                    .toFixed(1)
+                                    .replace(/\.0$/, "")}M`
+                                : marketCap >= 1_000
+                                  ? `${(marketCap / 1_000)
+                                      .toFixed(1)
+                                      .replace(/\.0$/, "")}K`
+                                  : marketCap.toFixed(2)}
+                          </strong>
+                  
+                          <span>MC</span>
+                        </div>
+                  
+                        <div className="market-card-stats">
+                          <span>
+                            TXNS{" "}
+                            <strong>
+                              {launch.transactionCount.toString()}
+                            </strong>
+                          </span>
+                  
+                          <span>
+                            PROGRESS{" "}
+                            <strong>
+                              {progress.toFixed(4)}%
+                            </strong>
+                          </span>
+                        </div>
+                  
+                        <div className="market-card-contract">
+                          <a
+                            href={getTokenExplorerUrl(
+                              launch.tokenAddress
+                            )}
+                            target="_blank"
+                            rel="noreferrer"
+                            onClick={(event) =>
+                              event.stopPropagation()
+                            }
+                          >
+                            {shortAddress}
+                          </a>
+                  
+                          <button
+                            type="button"
+                            onClick={async (event) => {
+                              event.stopPropagation();
+                  
+                              await navigator.clipboard.writeText(
+                                launch.tokenAddress
+                              );
+                  
+                              setCopiedTokenAddress(
+                                launch.tokenAddress
+                              );
+                  
+                              setTimeout(() => {
+                                setCopiedTokenAddress("");
+                              }, 1500);
+                            }}
+                          >
+                            {copiedTokenAddress ===
                             launch.tokenAddress
-                          );
-
-                          setCopiedTokenAddress(
-                            launch.tokenAddress
-                          );
-
-                          setTimeout(() => {
-                            setCopiedTokenAddress("");
-                          }, 1500);
-                        }}
-                      >
-                        {copiedTokenAddress ===
-                        launch.tokenAddress
-                          ? "COPIED ✓"
-                          : "COPY"}
-                      </button>
+                              ? "COPIED ✓"
+                              : "COPY"}
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                    </div>
-                  </div>
-
-                  <span className="market-cap-live">
-                    $
-                    {marketCap >= 1_000_000_000
-                      ? `${(marketCap / 1_000_000_000)
-                          .toFixed(1)
-                          .replace(/\.0$/, "")}B`
-                      : marketCap >= 1_000_000
-                        ? `${(marketCap / 1_000_000)
-                            .toFixed(1)
-                            .replace(/\.0$/, "")}M`
-                        : marketCap >= 1_000
-                          ? `${(marketCap / 1_000)
-                              .toFixed(1)
-                              .replace(/\.0$/, "")}K`
-                          : marketCap.toFixed(2)}
-                  </span>
-
-                  <span>
-                    {launch.transactionCount.toString()}
-                  </span>
-
-                  <span>
-                    {spotPrice.toLocaleString(
-                      undefined,
-                      {
-                        minimumFractionDigits: 8,
-                        maximumFractionDigits: 8,
-                      }
-                    )}
-                  </span>
-
-                    <span className="positive">
-                      {progress.toFixed(4)}%
-                    </span>
-
-                    <span>
-                      {launch.statusLabel === "GRADUATED"
-                        ? "DEX"
-                        : "—"}
-                    </span>
-                  </div>
-                );
+                  );
               })}
-
+              </div>
               {launchOpen && (
                 <div
                   className="launch-modal-backdrop"
@@ -6690,6 +6679,16 @@ useEffect(() => {
               )}
         </section>
         </>
+        )}
+
+        {activePage === "SWAP" && (
+          <SwapPage
+            connected={connected}
+            address={address}
+            chainId={chainId}
+            eip1193Provider={selectedProvider?.provider || null}
+            switchToArcMainnet={switchToArcMainnet}
+          />
         )}
 
         {activePage === "DOCS" && (

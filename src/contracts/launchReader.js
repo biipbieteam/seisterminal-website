@@ -90,7 +90,7 @@ import {
  * request bursts against the public Mainnet endpoint.
  */
 
-  const RPC_MIN_INTERVAL_MS = 1000;
+  const RPC_MIN_INTERVAL_MS = 500;
 
 let rpcNextAllowedAt = 0;
 

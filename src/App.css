@@ -6784,7 +6784,7 @@ button {
   
   .genesis-contract-address {
     display: block;
-    
+
     width: 220px;
     max-width: 220px;
   
@@ -8004,6 +8004,348 @@ button {
       font-size: 11px;
     }
   }
+
+  /* =========================
+   MARKET CARD GRID
+========================= */
+
+.market-card-grid {
+  padding: 16px;
+
+  display: grid;
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+  gap: 14px;
+
+  align-items: start;
+}
+
+.market-card {
+  min-width: 0;
+  overflow: hidden;
+
+  background: #0a0c0a;
+
+  border:
+    1px solid
+    rgba(183, 245, 31, 0.16);
+
+  border-radius: 12px;
+
+  cursor: pointer;
+
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.market-card:hover {
+  transform: translateY(-3px);
+
+  border-color:
+    rgba(183, 245, 31, 0.72);
+
+  background: #0d100d;
+
+  box-shadow:
+    0 10px 28px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(183, 245, 31, 0.06);
+}
+
+.market-card:focus-visible {
+  outline: 1px solid #b7f51f;
+  outline-offset: 2px;
+}
+
+
+/* IMAGE */
+
+.market-card-image {
+  position: relative;
+
+  width: 100%;
+  aspect-ratio: 1 / 1;
+
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(183, 245, 31, 0.07),
+      transparent 62%
+    ),
+    #070907;
+}
+
+.market-card-image > img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+
+  transition:
+    transform 220ms ease,
+    filter 220ms ease;
+}
+
+.market-card:hover
+.market-card-image > img {
+  transform: scale(1.035);
+  filter: brightness(1.05);
+}
+
+.market-card-image-fallback {
+  font-size: clamp(42px, 5vw, 72px);
+  font-weight: 900;
+
+  color: #b7f51f;
+
+  text-shadow:
+    0 0 22px
+    rgba(183, 245, 31, 0.18);
+}
+
+
+/* BONDING PROGRESS */
+
+.market-card-progress {
+  position: absolute;
+
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  height: 3px;
+
+  background:
+    rgba(255, 255, 255, 0.08);
+}
+
+.market-card-progress > span {
+  display: block;
+
+  height: 100%;
+
+  background: #b7f51f;
+
+  box-shadow:
+    0 0 10px
+    rgba(183, 245, 31, 0.45);
+}
+
+
+/* BODY */
+
+.market-card-body {
+  padding: 13px 14px 14px;
+
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.market-card-title {
+  min-width: 0;
+
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.market-card-title strong {
+  min-width: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+
+  color: #f4f7f2;
+
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.market-card-title > span {
+  flex: 0 0 auto;
+
+  color: #899187;
+
+  font-size: 11px;
+  font-weight: 700;
+}
+
+
+/* MARKET CAP */
+
+.market-card-mcap {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.market-card-mcap strong {
+  color: #b7f51f;
+
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.market-card-mcap span {
+  color: #697067;
+
+  font-size: 10px;
+  font-weight: 800;
+}
+
+
+/* STATS */
+
+.market-card-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+
+  padding-top: 10px;
+
+  border-top:
+    1px solid
+    rgba(255, 255, 255, 0.06);
+
+  color: #697067;
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.market-card-stats strong {
+  margin-left: 3px;
+
+  color: #aeb5ac;
+
+  font-size: 10px;
+}
+
+
+/* CONTRACT */
+
+.market-card-contract {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.market-card-contract a {
+  min-width: 0;
+
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  color: #697067;
+
+  font-size: 10px;
+  text-decoration: none;
+}
+
+.market-card-contract a:hover {
+  color: #b7f51f;
+}
+
+.market-card-contract button {
+  flex: 0 0 auto;
+
+  padding: 4px 7px;
+
+  border:
+    1px solid
+    rgba(183, 245, 31, 0.2);
+
+  border-radius: 5px;
+
+  background:
+    rgba(183, 245, 31, 0.04);
+
+  color: #899187;
+
+  font: inherit;
+  font-size: 8px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.market-card-contract button:hover {
+  border-color:
+    rgba(183, 245, 31, 0.55);
+
+  color: #b7f51f;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 1180px) {
+  .market-card-grid {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 820px) {
+  .market-card-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 12px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 520px) {
+  .market-card-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .market-card-body {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .market-card-title strong {
+    font-size: 12px;
+  }
+
+  .market-card-mcap strong {
+    font-size: 15px;
+  }
+
+  .market-card-stats {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .market-card-contract {
+    display: none;
+  }
+}
 
   
 

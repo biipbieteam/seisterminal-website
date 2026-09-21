@@ -9,10 +9,10 @@ import {
   
   
   const ARC_CHAIN_ID =
-    5042002n;
+  5042n;
   
   const LAUNCH_FACTORY_ADDRESS =
-    "0x8Da50245171d09a544eb047fc3d4e8cE4514931A";
+  "0x56FC882244f8FB1d05C2171d180872B38800706F";
   
   
   const LAUNCH_FACTORY_ABI = [
@@ -54,9 +54,9 @@ import {
             "SUPABASE_SERVICE_ROLE_KEY"
           );
   
-        const rpcUrl =
+          const rpcUrl =
           Deno.env.get(
-            "ARC_TESTNET_RPC_URL"
+            "ARC_MAINNET_RPC_URL"
           );
   
   
@@ -424,92 +424,90 @@ import {
               );
   
   
-          const {
-            error:
-              upsertError,
-          } =
-            await supabase
-              .from(
-                "launch_tokens"
-              )
-              .upsert(
-                {
-                  chain_id:
+              const {
+                error:
+                  updateError,
+              } =
+                await supabase
+                  .from(
+                    "launch_tokens"
+                  )
+                  .update(
+                    {
+                      token_address:
+                        tokenAddress,
+    
+                      creator_address:
+                        launch.creator,
+    
+                      token_name:
+                        tokenName,
+    
+                      token_symbol:
+                        tokenSymbol,
+    
+                      decimals:
+                        Number(
+                          decimals
+                        ),
+    
+                      status:
+                        Number(
+                          launch.status
+                        ),
+    
+                      total_supply:
+                        launch.totalSupply
+                          .toString(),
+    
+                      token_total_supply:
+                        tokenTotalSupply
+                          .toString(),
+    
+                      bonding_supply:
+                        launch.bondingSupply
+                          .toString(),
+    
+                      liquidity_supply:
+                        launch.liquiditySupply
+                          .toString(),
+    
+                      tokens_sold:
+                        launch.tokensSold
+                          .toString(),
+    
+                      quote_reserve:
+                        launch.quoteReserve
+                          .toString(),
+    
+                      transaction_count:
+                        launch.transactionCount
+                          .toString(),
+    
+                      indexed_at:
+                        new Date()
+                          .toISOString(),
+                    }
+                  )
+                  .eq(
+                    "chain_id",
                     Number(
                       ARC_CHAIN_ID
-                    ),
-  
-                  launch_id:
-                    launchId,
-  
-                  token_address:
-                    tokenAddress,
-  
-                  creator_address:
-                    launch.creator,
-  
-                  token_name:
-                    tokenName,
-  
-                  token_symbol:
-                    tokenSymbol,
-  
-                  decimals:
-                    Number(
-                      decimals
-                    ),
-  
-                  status:
-                    Number(
-                      launch.status
-                    ),
-  
-                  total_supply:
-                    launch.totalSupply
-                      .toString(),
-  
-                  token_total_supply:
-                    tokenTotalSupply
-                      .toString(),
-  
-                  bonding_supply:
-                    launch.bondingSupply
-                      .toString(),
-  
-                  liquidity_supply:
-                    launch.liquiditySupply
-                      .toString(),
-  
-                  tokens_sold:
-                    launch.tokensSold
-                      .toString(),
-  
-                  quote_reserve:
-                    launch.quoteReserve
-                      .toString(),
-  
-                  transaction_count:
-                    launch.transactionCount
-                      .toString(),
-  
-                  indexed_at:
-                    new Date()
-                      .toISOString(),
-                },
-                {
-                  onConflict:
-                    "chain_id,launch_id",
-                }
-              );
+                    )
+                  )
+                  .eq(
+                    "launch_id",
+                    launchId
+                  );
   
   
-          if (
-            upsertError
-          ) {
-            throw new Error(
-              `Launch ${launchId}: ${upsertError.message}`
-            );
-          }
+                  if (
+                    updateError
+                  ) {
+                    throw new Error(
+                      `Launch ${launchId}: ${updateError.message}`
+                    );
+                  }
   
   
           indexed += 1;
