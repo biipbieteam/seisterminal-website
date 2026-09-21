@@ -12,11 +12,23 @@ const ARC_CHAIN_ID = 5042n;
 const LAUNCH_FACTORY_ADDRESS =
   "0x56FC882244f8FB1d05C2171d180872B38800706F";
 
-  const LAUNCH_FACTORY_ABI = [
+const LAUNCH_FACTORY_ABI = [
     "function launchFairToken(string name_, string symbol_) payable returns (uint256 launchId, address tokenAddress)",
+  
+    "function fairLaunches(uint256) view returns (address token, address creator, uint256 totalSupply, uint256 bondingSupply, uint256 liquiditySupply, uint256 tokensSold, uint256 quoteReserve, uint256 transactionCount, uint8 status)",
   
     "event FairLaunchCreated(uint256 indexed launchId, address indexed token, address indexed creator, uint256 totalSupply, uint256 bondingSupply, uint256 liquiditySupply)",
   ];
+
+const ERC20_ABI = [
+    "function decimals() view returns (uint8)",
+    "function totalSupply() view returns (uint256)",
+  ];
+  
+  const erc20Interface =
+    new Interface(
+      ERC20_ABI,
+    );
 
 const launchInterface =
   new Interface(
@@ -572,6 +584,97 @@ if (
       );
     }
 
+      /*
+     * --------------------------------------------------
+     * READ VERIFIED ON-CHAIN LAUNCH STATE
+     * --------------------------------------------------
+     */
+
+      const launchCall =
+        launchInterface
+          .encodeFunctionData(
+            "fairLaunches",
+            [
+              launchId,
+            ],
+          );
+  
+  
+      const launchResult =
+        await provider.call({
+          to:
+            LAUNCH_FACTORY_ADDRESS,
+  
+          data:
+            launchCall,
+        });
+  
+  
+      const launch =
+        launchInterface
+          .decodeFunctionResult(
+            "fairLaunches",
+            launchResult,
+          );
+  
+  
+      if (
+        String(
+          launch.token,
+        ).toLowerCase() !==
+        tokenAddress.toLowerCase()
+      ) {
+        throw new Error(
+          "Indexed launch token does not match verified token.",
+        );
+      }
+  
+  
+      const decimalsResult =
+        await provider.call({
+          to:
+            tokenAddress,
+  
+          data:
+            erc20Interface
+              .encodeFunctionData(
+                "decimals",
+              ),
+        });
+  
+  
+      const totalSupplyResult =
+        await provider.call({
+          to:
+            tokenAddress,
+  
+          data:
+            erc20Interface
+              .encodeFunctionData(
+                "totalSupply",
+              ),
+        });
+  
+  
+      const [
+        tokenDecimals,
+      ] =
+        erc20Interface
+          .decodeFunctionResult(
+            "decimals",
+            decimalsResult,
+          );
+  
+  
+      const [
+        tokenTotalSupply,
+      ] =
+        erc20Interface
+          .decodeFunctionResult(
+            "totalSupply",
+            totalSupplyResult,
+          );
+
 
     /*
      * --------------------------------------------------
@@ -717,6 +820,54 @@ if (
           transaction_hash:
             transactionHash
               .toLowerCase(),
+
+          decimals:
+            Number(
+              tokenDecimals,
+            ),
+
+          total_supply:
+            launch
+              .totalSupply
+              .toString(),
+
+          token_total_supply:
+            tokenTotalSupply
+              .toString(),
+
+          bonding_supply:
+            launch
+              .bondingSupply
+              .toString(),
+
+          liquidity_supply:
+            launch
+              .liquiditySupply
+              .toString(),
+
+          tokens_sold:
+            launch
+              .tokensSold
+              .toString(),
+
+          quote_reserve:
+            launch
+              .quoteReserve
+              .toString(),
+
+          transaction_count:
+            launch
+              .transactionCount
+              .toString(),
+
+          status:
+            Number(
+              launch.status,
+            ),
+
+          indexed_at:
+            new Date()
+              .toISOString(),
         })
         .select()
         .single();

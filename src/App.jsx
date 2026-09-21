@@ -3,7 +3,6 @@ import {
   useWallet,
 } from "./context/wallet-context";
 import {
-  getAllFairLaunches,
   refreshFairLaunch,
   getTokenExplorerUrl,
 } from "./contracts/launchReader.js";
@@ -447,115 +446,21 @@ function App() {
       }
 
 
-      let orderedLaunches;
-
-
       /*
        * ========================================================
        * PRIMARY MARKET SOURCE:
-       * ARC MAINNET RPC
+       * SUPABASE LAUNCH INDEX
        * ========================================================
        *
-       * Smart-contract state is the source of truth.
+       * launch_tokens contains the verified
+       * on-chain launch state required by MARKET.
        *
-       * Supabase is used only for supplementary
-       * off-chain metadata such as token logos.
+       * Browser startup must not scan every
+       * launch from the public Arc RPC.
        */
 
-      const blockchainLaunches =
-        await getAllFairLaunches(
-          cachedLaunches
-        );
-
-
-      /*
-       * ========================================================
-       * SUPABASE METADATA ENRICHMENT
-       * ========================================================
-       *
-       * Failure to load Supabase metadata must NOT
-       * prevent on-chain launches from appearing.
-       */
-
-      let metadata = [];
-
-      try {
-        metadata =
-          await getLaunchMetadata();
-      } catch (
-        metadataError
-      ) {
-        console.error(
-          "Failed to load launch metadata:",
-          metadataError
-        );
-      }
-
-
-      const metadataByToken =
-        new Map(
-          metadata
-            .filter(
-              (item) =>
-                item?.token_address
-            )
-            .map(
-              (item) => [
-                item.token_address
-                  .toLowerCase(),
-
-                item,
-              ]
-            )
-        );
-
-
-      const enrichedLaunches =
-        blockchainLaunches.map(
-          (launch) => {
-            const tokenAddress =
-              launch?.tokenAddress;
-
-            if (
-              !tokenAddress
-            ) {
-              return {
-                ...launch,
-                logoUrl:
-                  null,
-              };
-            }
-
-
-            const metadataItem =
-              metadataByToken.get(
-                tokenAddress
-                  .toLowerCase()
-              );
-
-
-            return {
-              ...launch,
-
-              logoUrl:
-                metadataItem
-                  ?.logoUrl ||
-                null,
-
-              launchTransactionHash:
-                metadataItem
-                  ?.transaction_hash ||
-                null,
-            };
-          }
-        );
-
-
-      orderedLaunches =
-        [
-          ...enrichedLaunches,
-        ].reverse();
-
+      const orderedLaunches =
+        await getLaunchMetadata();
 
 
       setLiveLaunches(
@@ -3640,16 +3545,7 @@ useEffect(() => {
 
         <div className="sidebar-bottom">
 
-            <button
-              type="button"
-              className="genesis-drop-btn"
-              onClick={() => {
-                setGenesisDropView("details");
-                setGenesisDropOpen(true);
-              }}
-            >
-              GENESIS DROP_
-            </button>
+
 
           <button
             type="button"

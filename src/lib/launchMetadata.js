@@ -25,8 +25,19 @@ import {
           creator_address,
           token_name,
           token_symbol,
+          decimals,
+          total_supply,
+          token_total_supply,
+          bonding_supply,
+          liquidity_supply,
+          tokens_sold,
+          quote_reserve,
+          transaction_count,
+          status,
           logo_path,
           transaction_hash,
+          indexed_at,
+          state_updated_at,
           created_at
         `
       )
@@ -62,9 +73,151 @@ import {
             null;
         }
   
+        const decimals =
+          Number(
+            item.decimals
+          );
+
+        const totalSupply =
+          BigInt(
+            item.total_supply
+          );
+
+        const tokenTotalSupply =
+          BigInt(
+            item.token_total_supply
+          );
+
+        const bondingSupply =
+          BigInt(
+            item.bonding_supply
+          );
+
+        const liquiditySupply =
+          BigInt(
+            item.liquidity_supply
+          );
+
+        const tokensSold =
+          BigInt(
+            item.tokens_sold
+          );
+
+        const quoteReserve =
+          BigInt(
+            item.quote_reserve
+          );
+
+        const transactionCount =
+          BigInt(
+            item.transaction_count
+          );
+
+
+        const progressBps =
+          bondingSupply > 0n
+            ? (
+                tokensSold *
+                10_000n
+              ) /
+              bondingSupply
+            : 0n;
+
+        const progressPercent =
+          Number(
+            progressBps
+          ) / 100;
+
+
         return {
-          ...item,
+          launchId:
+            BigInt(
+              item.launch_id
+            ),
+
+          tokenAddress:
+            item.token_address,
+
+          creator:
+            item.creator_address,
+
+          name:
+            item.token_name,
+
+          symbol:
+            item.token_symbol,
+
+          decimals,
+
+          transactionCount,
+
+          status:
+            Number(
+              item.status
+            ),
+
+          statusLabel:
+            getLaunchStatusLabel(
+              item.status
+            ),
+
+          raw: {
+            totalSupply,
+            tokenTotalSupply,
+            bondingSupply,
+            liquiditySupply,
+            tokensSold,
+            quoteReserve,
+            transactionCount,
+          },
+
+          formatted: {
+            totalSupply:
+              formatUnits(
+                totalSupply,
+                decimals
+              ),
+
+            bondingSupply:
+              formatUnits(
+                bondingSupply,
+                decimals
+              ),
+
+            liquiditySupply:
+              formatUnits(
+                liquiditySupply,
+                decimals
+              ),
+
+            tokensSold:
+              formatUnits(
+                tokensSold,
+                decimals
+              ),
+
+            quoteReserve:
+              formatUnits(
+                quoteReserve,
+                ARC_MAINNET.nativeCurrency.decimals
+              ),
+
+            progressPercent,
+          },
+
           logoUrl,
+
+          launchTransactionHash:
+            item.transaction_hash,
+
+          indexedAt:
+            item.indexed_at,
+
+          stateUpdatedAt:
+            item.state_updated_at,
+
+          createdAt:
+            item.created_at,
         };
       }
     );
