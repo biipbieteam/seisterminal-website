@@ -1,0 +1,8 @@
+{
+    "rewrites": [
+      {
+        "source": "/verify-genesis",
+        "destination": "/index.html"
+      }
+    ]
+  }

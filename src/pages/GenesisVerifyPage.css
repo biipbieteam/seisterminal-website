@@ -1,0 +1,199 @@
+.genesis-verify-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    background: #050705;
+    color: #f5f5f5;
+  }
+  
+  .genesis-verify-card {
+    width: 100%;
+    max-width: 520px;
+    padding: 36px;
+    box-sizing: border-box;
+    border: 1px solid rgba(163, 255, 18, 0.22);
+    border-radius: 18px;
+    background: #090c09;
+  }
+  
+  .genesis-verify-brand {
+    margin-bottom: 24px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    color: #a3ff12;
+  }
+  
+  .genesis-verify-label {
+    margin-bottom: 10px;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    color: #8d968d;
+  }
+  
+  .genesis-verify-card h1 {
+    margin: 0 0 14px;
+    font-size: 30px;
+    line-height: 1.15;
+  }
+  
+  .genesis-verify-card p {
+    margin: 0 0 28px;
+    line-height: 1.65;
+    color: #9ba39b;
+  }
+  
+  .genesis-verify-status {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 18px;
+    font-size: 12px;
+    color: #a3ff12;
+  }
+  
+  .genesis-verify-status span {
+    width: 7px;
+    height: 7px;
+    flex: 0 0 7px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  
+  .genesis-verify-button {
+    width: 100%;
+    min-height: 48px;
+    border: 0;
+    border-radius: 10px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+  }
+  
+  .genesis-verify-button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  
+  .genesis-verify-hint {
+    margin-top: 12px;
+    text-align: center;
+    font-size: 11px;
+    color: #687068;
+  }
+  
+  .genesis-verify-error {
+    padding: 14px;
+    border: 1px solid rgba(255, 90, 90, 0.35);
+    border-radius: 10px;
+    font-size: 12px;
+    color: #ff7676;
+  }
+  
+  @media (max-width: 600px) {
+    .genesis-verify-page {
+      padding: 16px;
+    }
+  
+    .genesis-verify-card {
+      padding: 26px 20px;
+    }
+  
+    .genesis-verify-card h1 {
+      font-size: 25px;
+    }
+  }
+
+  .genesis-verify-connected {
+    padding: 16px;
+    border: 1px solid rgba(163, 255, 18, 0.25);
+    border-radius: 10px;
+    background: rgba(163, 255, 18, 0.04);
+  }
+  
+  .genesis-verify-connected-label {
+    margin-bottom: 7px;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: #a3ff12;
+  }
+  
+  .genesis-verify-address {
+    font-size: 15px;
+    font-weight: 700;
+    color: #f5f5f5;
+  }
+  
+  .genesis-wallet-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  
+  .genesis-wallet-option {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid rgba(163, 255, 18, 0.15);
+    border-radius: 10px;
+    background: #0d110d;
+    color: #f5f5f5;
+    cursor: pointer;
+    text-align: left;
+  }
+  
+  .genesis-wallet-option:hover {
+    border-color: rgba(163, 255, 18, 0.5);
+    background: rgba(163, 255, 18, 0.05);
+  }
+  
+  .genesis-wallet-option:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .genesis-wallet-option img {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+  }
+  
+  .genesis-wallet-option div {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  
+  .genesis-wallet-option strong {
+    font-size: 13px;
+  }
+  
+  .genesis-wallet-option span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 10px;
+    color: #747d74;
+  }
+  
+  .genesis-wallet-empty {
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    text-align: center;
+    font-size: 11px;
+    color: #747d74;
+  }
+  
+  .genesis-wallet-error {
+    margin-top: 10px;
+  }
+  
+  .genesis-verify-hint {
+    margin-top: 16px;
+  }

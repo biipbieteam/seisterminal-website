@@ -1,0 +1,215 @@
+import {
+    useState,
+  } from "react";
+  
+  import {
+    useWallet,
+  } from "../context/wallet-context";
+  
+  import "./GenesisVerifyPage.css";
+  
+  
+  function GenesisVerifyPage() {
+  
+    const {
+      providers,
+      connected,
+      connecting,
+      address,
+      walletError,
+      connectProvider,
+    } = useWallet();
+  
+  
+    const [
+      walletPickerOpen,
+      setWalletPickerOpen,
+    ] = useState(false);
+  
+  
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+  
+    const session =
+      params.get("session") || "";
+  
+  
+    const shortAddress =
+      address
+        ? `${address.slice(0, 6)}...${address.slice(-4)}`
+        : "";
+  
+  
+    return (
+      <div className="genesis-verify-page">
+  
+        <div className="genesis-verify-card">
+  
+          <div className="genesis-verify-brand">
+            SEIS TERMINAL
+          </div>
+  
+          <div className="genesis-verify-label">
+            GENESIS VERIFICATION
+          </div>
+  
+          <h1>
+            Verify your Genesis wallet
+          </h1>
+  
+          <p>
+            Connect the wallet that holds your
+            Genesis NFT to verify ownership for
+            Discord.
+          </p>
+  
+  
+          {!session ? (
+  
+            <div className="genesis-verify-error">
+              INVALID OR MISSING VERIFICATION SESSION_
+            </div>
+  
+          ) : (
+  
+            <>
+  
+              <div className="genesis-verify-status">
+                <span />
+                VERIFICATION SESSION DETECTED_
+              </div>
+  
+  
+              {connected ? (
+  
+                <div className="genesis-verify-connected">
+  
+                  <div className="genesis-verify-connected-label">
+                    WALLET CONNECTED_
+                  </div>
+  
+                  <div className="genesis-verify-address">
+                    {shortAddress}
+                  </div>
+  
+                </div>
+  
+              ) : (
+  
+                <>
+  
+                  <button
+                    type="button"
+                    className="genesis-verify-button"
+                    disabled={connecting}
+                    onClick={() => {
+                      setWalletPickerOpen(
+                        (current) => !current
+                      );
+                    }}
+                  >
+                    {connecting
+                      ? "CONNECTING..."
+                      : "CONNECT WALLET"}
+                  </button>
+  
+  
+                  {walletPickerOpen && (
+  
+                    <div className="genesis-wallet-list">
+  
+                      {providers.length === 0 ? (
+  
+                        <div className="genesis-wallet-empty">
+                          NO EVM WALLET DETECTED_
+                        </div>
+  
+                      ) : (
+  
+                        providers.map(
+                          (wallet) => (
+  
+                            <button
+                              type="button"
+                              key={
+                                wallet.info.uuid ||
+                                wallet.info.rdns ||
+                                wallet.info.name
+                              }
+                              className="genesis-wallet-option"
+                              disabled={connecting}
+                              onClick={async () => {
+  
+                                const success =
+                                  await connectProvider(
+                                    wallet
+                                  );
+  
+                                if (success) {
+                                  setWalletPickerOpen(
+                                    false
+                                  );
+                                }
+                              }}
+                            >
+  
+                              {wallet.info.icon && (
+                                <img
+                                  src={wallet.info.icon}
+                                  alt=""
+                                />
+                              )}
+  
+                              <div>
+                                <strong>
+                                  {wallet.info.name}
+                                </strong>
+  
+                                <span>
+                                  {wallet.info.rdns}
+                                </span>
+                              </div>
+  
+                            </button>
+  
+                          )
+                        )
+  
+                      )}
+  
+                    </div>
+  
+                  )}
+  
+  
+                  {walletError && (
+                    <div className="genesis-verify-error genesis-wallet-error">
+                      {walletError}
+                    </div>
+                  )}
+  
+                </>
+  
+              )}
+  
+  
+              <div className="genesis-verify-hint">
+                Connecting a wallet does not
+                complete verification or grant
+                Discord roles.
+              </div>
+  
+            </>
+  
+          )}
+  
+        </div>
+  
+      </div>
+    );
+  }
+  
+  
+  export default GenesisVerifyPage;

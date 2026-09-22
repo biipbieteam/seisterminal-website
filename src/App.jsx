@@ -60,12 +60,17 @@ import {
 } from "./lib/genesisEligibility";
 
 import SwapPage from "./pages/SwapPage";
-
+import GenesisVerifyPage
+  from "./pages/GenesisVerifyPage";
 import "./App.css";
 
 
 
 function App() {
+
+  const isGenesisVerifyPage =
+    window.location.pathname ===
+    "/verify-genesis";
 
   const [
     walletModalOpen,
@@ -3406,7 +3411,9 @@ useEffect(() => {
   };
 }, [genesisDropOpen]);
 
-
+  if (isGenesisVerifyPage) {
+    return <GenesisVerifyPage />;
+  }
 
   return (
     <div className="terminal-app">
