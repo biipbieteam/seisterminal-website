@@ -2,6 +2,9 @@ import {
   createClient,
 } from "https://esm.sh/@supabase/supabase-js@2";
 
+import {
+  verifyMessage,
+} from "https://esm.sh/ethers@6";
 
 const ARC_CHAIN_ID = 5042;
 
@@ -96,6 +99,10 @@ Deno.serve(async (req) => {
     const body =
       await req.json();
 
+    const action =
+      String(
+        body?.action ?? "challenge",
+      ).trim();
 
     const session =
       String(
@@ -108,7 +115,10 @@ Deno.serve(async (req) => {
         body?.walletAddress ?? "",
       ).trim();
 
-
+    const signature =
+      String(
+        body?.signature ?? "",
+      ).trim();
     /*
      * --------------------------------------------------
      * BASIC INPUT VALIDATION
@@ -292,25 +302,208 @@ Deno.serve(async (req) => {
       );
 
 
-    return jsonResponse(
-      {
-        success: true,
+      /*
+      * --------------------------------------------------
+      * PHASE 1 — RETURN SIGNATURE CHALLENGE
+      * --------------------------------------------------
+      */
 
-        challenge: {
-          message,
+      if (
+        action === "challenge"
+      ) {
+        return jsonResponse(
+          {
+            success: true,
 
-          walletAddress:
-            normalizedAddress,
+            challenge: {
+              message,
 
-          chainId:
-            ARC_CHAIN_ID,
+              walletAddress:
+                normalizedAddress,
 
-          expiresAt:
-            expiresAt.toISOString(),
+              chainId:
+                ARC_CHAIN_ID,
+
+              expiresAt:
+                expiresAt.toISOString(),
+            },
+          },
+          200,
+        );
+      }
+
+
+      /*
+      * --------------------------------------------------
+      * PHASE 2 — VERIFY WALLET SIGNATURE
+      * --------------------------------------------------
+      */
+
+      if (
+        action === "verify"
+      ) {
+
+        if (
+          !/^0x[a-fA-F0-9]{130}$/.test(
+            signature,
+          )
+        ) {
+          return jsonResponse(
+            {
+              error:
+                "Invalid wallet signature.",
+            },
+            400,
+          );
+        }
+
+
+        let recoveredAddress:
+          string;
+
+
+        try {
+
+          recoveredAddress =
+            verifyMessage(
+              message,
+              signature,
+            ).toLowerCase();
+
+        } catch {
+
+          return jsonResponse(
+            {
+              error:
+                "Invalid wallet signature.",
+            },
+            401,
+          );
+        }
+
+
+        if (
+          recoveredAddress !==
+          normalizedAddress
+        ) {
+          return jsonResponse(
+            {
+              error:
+                "Signature does not match the connected wallet.",
+            },
+            401,
+          );
+        }
+
+
+        /*
+        * Signature is valid.
+        *
+        * Only now may the server consume the session
+        * and link the Discord account to this wallet.
+        */
+
+        const {
+          data:
+            finalizeData,
+
+          error:
+            finalizeError,
+        } =
+          await supabase.rpc(
+            "finalize_genesis_wallet_link",
+            {
+              p_token_hash:
+                tokenHash,
+
+              p_wallet_address:
+                normalizedAddress,
+            },
+          );
+
+
+        if (
+          finalizeError
+        ) {
+          console.error(
+            "genesis verification finalize:",
+            finalizeError,
+          );
+
+          throw new Error(
+            "Unable to finalize wallet verification.",
+          );
+        }
+
+
+        const result =
+          Array.isArray(
+            finalizeData,
+          )
+            ? finalizeData[0]
+            : finalizeData;
+
+
+        if (
+          !result?.success
+        ) {
+
+          const status =
+            result?.status ||
+            "verification_failed";
+
+
+          const statusCode =
+            status ===
+              "session_expired"
+              ? 410
+              : status ===
+                  "session_already_used"
+                ? 409
+                : status ===
+                    "wallet_already_linked"
+                  ? 409
+                  : 400;
+
+
+          return jsonResponse(
+            {
+              success: false,
+              status,
+            },
+            statusCode,
+          );
+        }
+
+
+        return jsonResponse(
+          {
+            success: true,
+
+            status:
+              "verified",
+
+            walletAddress:
+              normalizedAddress,
+          },
+          200,
+        );
+      }
+
+
+      /*
+      * --------------------------------------------------
+      * UNKNOWN ACTION
+      * --------------------------------------------------
+      */
+
+      return jsonResponse(
+        {
+          error:
+            "Invalid verification action.",
         },
-      },
-      200,
-    );
+        400,
+      );
 
   } catch (error) {
 

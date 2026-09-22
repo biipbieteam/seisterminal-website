@@ -17,6 +17,7 @@ import {
   
     const {
       providers,
+      selectedProvider,
       connected,
       connecting,
       address,
@@ -45,6 +46,21 @@ import {
       setChallengeError,
     ] = useState("");
 
+    const [
+        challengeMessage,
+        setChallengeMessage,
+      ] = useState("");
+      
+    const [
+        signatureLoading,
+        setSignatureLoading,
+      ] = useState(false);
+      
+    const [
+        signatureReady,
+        setSignatureReady,
+      ] = useState(false);
+
     const params =
       new URLSearchParams(
         window.location.search
@@ -72,7 +88,9 @@ import {
           setChallengeLoading(true);
           setChallengeReady(false);
           setChallengeError("");
-  
+          setChallengeMessage("");
+          setSignatureReady(false);
+
           try {
   
             const {
@@ -109,6 +127,10 @@ import {
             }
   
   
+            setChallengeMessage(
+            data.challenge.message
+            );
+
             setChallengeReady(true);
   
           } catch (error) {
@@ -128,6 +150,121 @@ import {
   
             setChallengeLoading(false);
   
+          }
+        };
+
+        const signChallenge =
+        async () => {
+      
+          if (
+            !selectedProvider?.provider ||
+            !address ||
+            !challengeMessage
+          ) {
+            setChallengeError(
+              "Wallet or verification challenge unavailable."
+            );
+      
+            return;
+          }
+      
+      
+          setSignatureLoading(true);
+          setChallengeError("");
+          setSignatureReady(false);
+      
+      
+          try {
+      
+            const signature =
+              await selectedProvider.provider.request({
+                method:
+                  "personal_sign",
+      
+                params: [
+                  challengeMessage,
+                  address,
+                ],
+              });
+      
+      
+            if (
+              typeof signature !== "string" ||
+              !signature.startsWith("0x")
+            ) {
+              throw new Error(
+                "Invalid wallet signature."
+              );
+            }
+      
+      
+            const {
+                data: verifyData,
+                error: verifyError,
+              } =
+                await supabase
+                  .functions
+                  .invoke(
+                    "genesis-verification-challenge",
+                    {
+                      body: {
+                        action: "verify",
+                        session,
+                        walletAddress:
+                          address,
+                        signature,
+                      },
+                    }
+                  );
+              
+              
+              if (verifyError) {
+                throw verifyError;
+              }
+              
+              
+              if (
+                !verifyData?.success ||
+                verifyData?.status !==
+                  "verified"
+              ) {
+                throw new Error(
+                  verifyData?.status ||
+                  verifyData?.error ||
+                  "Wallet verification failed."
+                );
+              }
+              
+              
+              setSignatureReady(true);
+      
+      
+          } catch (error) {
+      
+            console.error(
+              "Genesis signature error:",
+              error
+            );
+      
+      
+            if (
+              error?.code === 4001
+            ) {
+              setChallengeError(
+                "Signature request rejected."
+              );
+            } else {
+              setChallengeError(
+                error instanceof Error
+                  ? error.message
+                  : "Unable to sign verification message."
+              );
+            }
+      
+          } finally {
+      
+            setSignatureLoading(false);
+      
           }
         };
 
@@ -174,34 +311,50 @@ import {
               {connected ? (
                 <>
                     <div className="genesis-verify-connected">
-    
-                        <div className="genesis-verify-connected-label">
-                            WALLET CONNECTED_
-                        </div>
-        
-                        <div className="genesis-verify-address">
-                            {shortAddress}
-                        </div>
-    
+
+                    <div className="genesis-verify-connected-label">
+                        WALLET CONNECTED_
                     </div>
+
+                    <div className="genesis-verify-address">
+                        {shortAddress}
+                    </div>
+
+                    </div>
+
+
+                    {!challengeReady ? (
+
+                    <button
+                        type="button"
+                        className="genesis-verify-button genesis-challenge-button"
+                        disabled={challengeLoading}
+                        onClick={requestChallenge}
+                    >
+                        {challengeLoading
+                        ? "PREPARING..."
+                        : "CONTINUE VERIFICATION"}
+                    </button>
+
+                    ) : (
 
                     <button
                         type="button"
                         className="genesis-verify-button genesis-challenge-button"
                         disabled={
-                        challengeLoading ||
-                        challengeReady
+                        signatureLoading ||
+                        signatureReady
                         }
-                        onClick={
-                        requestChallenge
-                        }
-                        >
-                        {challengeLoading
-                        ? "PREPARING..."
-                        : challengeReady
-                            ? "CHALLENGE READY_"
-                            : "CONTINUE VERIFICATION"}
+                        onClick={signChallenge}
+                    >
+                        {signatureLoading
+                        ? "SIGNING..."
+                        : signatureReady
+                            ? "SIGNATURE READY_"
+                            : "SIGN MESSAGE"}
                     </button>
+
+                    )}
 
 
                     {challengeError && (
