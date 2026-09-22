@@ -30,39 +30,65 @@ export default function SwapTokenSelector({
     chains[0] ||
     null;
 
-  const tokens =
+    const tokens =
     useMemo(() => {
-      const chainTokens =
-        getRelayChainTokens(
-          activeChain
-        );
-
       const query =
         search
           .trim()
           .toLowerCase();
-
+  
       if (!query) {
-        return chainTokens;
+        return getRelayChainTokens(
+          activeChain
+        );
       }
-
-      return chainTokens.filter(
-        (token) =>
-          token.symbol
-            .toLowerCase()
-            .includes(query) ||
-          token.name
-            .toLowerCase()
-            .includes(query) ||
-          token.address
-            .toLowerCase()
-            .includes(query)
-      );
+  
+      return chains
+        .flatMap((chain) =>
+          getRelayChainTokens(chain)
+        )
+        .filter(
+          (token) =>
+            token.symbol
+              .toLowerCase()
+              .includes(query) ||
+            token.name
+              .toLowerCase()
+              .includes(query) ||
+            token.address
+              .toLowerCase()
+              .includes(query)
+        );
     }, [
       activeChain,
+      chains,
       search,
     ]);
 
+    console.log("[SWAP SEARCH DEBUG]", {
+        query: search,
+        chainCount: chains.length,
+        ethereum: chains.find(
+          (chain) => chain.id === 1
+        ),
+        ethMatches: chains
+          .flatMap((chain) =>
+            getRelayChainTokens(chain)
+          )
+          .filter(
+            (token) =>
+              token.symbol
+                ?.toUpperCase()
+                .includes("ETH")
+          )
+          .map((token) => ({
+            chainId: token.chainId,
+            chainName: token.chainName,
+            symbol: token.symbol,
+            address: token.address,
+          })),
+      });
+      
   if (!open) {
     return null;
   }
