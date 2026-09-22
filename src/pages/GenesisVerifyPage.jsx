@@ -5,7 +5,11 @@ import {
   import {
     useWallet,
   } from "../context/wallet-context";
-  
+
+  import {
+    supabase,
+  } from "../lib/supabase";
+
   import "./GenesisVerifyPage.css";
   
   
@@ -26,7 +30,21 @@ import {
       setWalletPickerOpen,
     ] = useState(false);
   
-  
+    const [
+      challengeLoading,
+      setChallengeLoading,
+    ] = useState(false);
+
+    const [
+      challengeReady,
+      setChallengeReady,
+    ] = useState(false);
+
+    const [
+      challengeError,
+      setChallengeError,
+    ] = useState("");
+
     const params =
       new URLSearchParams(
         window.location.search
@@ -41,7 +59,78 @@ import {
         ? `${address.slice(0, 6)}...${address.slice(-4)}`
         : "";
   
+    const requestChallenge =
+        async () => {
   
+          if (
+            !session ||
+            !address
+          ) {
+            return;
+          }
+  
+          setChallengeLoading(true);
+          setChallengeReady(false);
+          setChallengeError("");
+  
+          try {
+  
+            const {
+              data,
+              error,
+            } =
+              await supabase
+                .functions
+                .invoke(
+                  "genesis-verification-challenge",
+                  {
+                    body: {
+                      session,
+                      walletAddress:
+                        address,
+                    },
+                  }
+                );
+  
+  
+            if (error) {
+              throw error;
+            }
+  
+  
+            if (
+              !data?.success ||
+              !data?.challenge?.message
+            ) {
+              throw new Error(
+                data?.error ||
+                "Invalid verification challenge."
+              );
+            }
+  
+  
+            setChallengeReady(true);
+  
+          } catch (error) {
+  
+            console.error(
+              "Genesis challenge error:",
+              error
+            );
+  
+            setChallengeError(
+              error instanceof Error
+                ? error.message
+                : "Unable to prepare verification."
+            );
+  
+          } finally {
+  
+            setChallengeLoading(false);
+  
+          }
+        };
+
     return (
       <div className="genesis-verify-page">
   
@@ -83,19 +172,44 @@ import {
   
   
               {connected ? (
-  
-                <div className="genesis-verify-connected">
-  
-                  <div className="genesis-verify-connected-label">
-                    WALLET CONNECTED_
-                  </div>
-  
-                  <div className="genesis-verify-address">
-                    {shortAddress}
-                  </div>
-  
-                </div>
-  
+                <>
+                    <div className="genesis-verify-connected">
+    
+                        <div className="genesis-verify-connected-label">
+                            WALLET CONNECTED_
+                        </div>
+        
+                        <div className="genesis-verify-address">
+                            {shortAddress}
+                        </div>
+    
+                    </div>
+
+                    <button
+                        type="button"
+                        className="genesis-verify-button genesis-challenge-button"
+                        disabled={
+                        challengeLoading ||
+                        challengeReady
+                        }
+                        onClick={
+                        requestChallenge
+                        }
+                        >
+                        {challengeLoading
+                        ? "PREPARING..."
+                        : challengeReady
+                            ? "CHALLENGE READY_"
+                            : "CONTINUE VERIFICATION"}
+                    </button>
+
+
+                    {challengeError && (
+                        <div className="genesis-verify-error genesis-wallet-error">
+                        {challengeError}
+                        </div>
+                    )}
+                </>
               ) : (
   
                 <>
