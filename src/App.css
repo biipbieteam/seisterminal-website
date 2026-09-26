@@ -5490,41 +5490,54 @@ button {
   letter-spacing: 0.06em;
 }
 
-.market-table {
-  position: relative;
-}
+/* =========================================================
+   MARKET — INITIAL LOADING OVERLAY
+   ========================================================= */
 
-.market-loading-layer {
-  position: absolute;
-  inset: 0;
-  z-index: 20;
+   .market-table {
+    position: relative;
+  }
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  min-height: 220px;
-
-  background: rgba(6, 8, 6, 0.72);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-}
-
-.market-loading-toast {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-
-  min-width: 280px;
-  padding: 16px 18px;
-
-  background: #080a08;
-  border: 1px solid rgba(183, 245, 31, 0.42);
-
-  box-shadow:
-    0 12px 35px rgba(0, 0, 0, 0.45),
-    0 0 24px rgba(183, 245, 31, 0.08);
-}
+  .market-table.market-table-loading {
+    overflow-y: hidden;
+  }
+  
+  .market-loading-layer {
+    position: absolute;
+    inset: -1px;
+  
+    z-index: 1000;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    min-height: 100%;
+  
+    background: #050505;
+  
+    border-radius: inherit;
+  
+    pointer-events: all;
+  }
+  
+  .market-loading-toast {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  
+    min-width: 280px;
+    padding: 16px 18px;
+  
+    background: #080a08;
+  
+    border: 1px solid rgba(183, 245, 31, 0.42);
+    border-radius: 8px;
+  
+    box-shadow:
+      0 12px 35px rgba(0, 0, 0, 0.45),
+      0 0 24px rgba(183, 245, 31, 0.08);
+  }
 
 .market-loading-spinner {
   width: 28px;
@@ -8345,6 +8358,312 @@ button {
   .market-card-contract {
     display: none;
   }
+}
+
+
+/* =========================================================
+   DEX MARKET CARD
+   ========================================================= */
+
+   .market-card-dex {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+  }
+  
+  
+  /* ---------------------------------------------------------
+     TOKEN MEDIA
+     --------------------------------------------------------- */
+  
+  .market-card-dex .market-card-media {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    background: #080b08;
+    border-bottom: 1px solid rgba(166, 255, 0, 0.14);
+  }
+  
+  
+  /*
+   * Every external token logo gets exactly the
+   * same frame regardless of original dimensions.
+   */
+  .market-card-dex .market-card-media img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+  
+  
+  /* ---------------------------------------------------------
+     FALLBACK
+     --------------------------------------------------------- */
+  
+  .market-card-dex .market-card-image-fallback {
+    width: 100%;
+    height: 100%;
+  
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  
+    background:
+      radial-gradient(
+        circle at center,
+        rgba(166, 255, 0, 0.08),
+        transparent 65%
+      ),
+      #080b08;
+  
+    color: #a6ff00;
+  
+    font-size: clamp(42px, 5vw, 76px);
+    font-weight: 900;
+    line-height: 1;
+  
+    text-transform: uppercase;
+    user-select: none;
+  }
+  
+  
+  /* ---------------------------------------------------------
+     BODY
+     --------------------------------------------------------- */
+  
+  .market-card-dex .market-card-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  
+    min-width: 0;
+    padding: 16px;
+  }
+  
+  
+  /* ---------------------------------------------------------
+     TITLE
+     --------------------------------------------------------- */
+  
+  .market-card-dex .market-card-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  
+  
+  .market-card-dex .market-card-title-row > div {
+    min-width: 0;
+  }
+  
+  
+  .market-card-dex .market-card-title-row h3 {
+    margin: 0 0 8px;
+  
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  
+  .market-card-dex .market-card-title-row > div > span {
+    display: block;
+  
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  
+  /* DEX source badge */
+  
+  .market-card-dex
+    .market-card-title-row
+    > span {
+    flex: 0 0 auto;
+  
+    padding: 3px 7px;
+  
+    border: 1px solid
+      rgba(166, 255, 0, 0.25);
+  
+    border-radius: 4px;
+  
+    color: #a6ff00;
+  
+    font-size: 10px;
+    font-weight: 800;
+  }
+  
+  
+  /* ---------------------------------------------------------
+     MARKET CAP
+     --------------------------------------------------------- */
+  
+  .market-card-dex .market-card-mcap {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  
+    margin-top: 16px;
+    padding-bottom: 12px;
+  
+    border-bottom: 1px solid
+      rgba(255, 255, 255, 0.07);
+  }
+  
+  
+  /* ---------------------------------------------------------
+     STATS
+     --------------------------------------------------------- */
+  
+  .market-card-dex .market-card-stats {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr);
+  
+    gap: 12px;
+  
+    padding: 11px 0;
+  
+    border-bottom: 1px solid
+      rgba(255, 255, 255, 0.07);
+  }
+  
+  
+  .market-card-dex
+    .market-card-stats
+    > div:nth-child(2) {
+    text-align: right;
+  }
+  
+  
+  .market-card-dex
+    .market-card-stats
+    span {
+    display: block;
+    margin-bottom: 4px;
+  }
+  
+  
+  .market-card-dex
+    .market-card-stats
+    strong {
+    display: block;
+  
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  
+  /* ---------------------------------------------------------
+     CONTRACT
+     --------------------------------------------------------- */
+  
+  .market-card-dex .market-card-contract {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  
+    margin-top: auto;
+    padding-top: 12px;
+  
+    min-width: 0;
+  }
+  
+  
+  .market-card-dex
+    .market-card-contract
+    strong {
+    min-width: 0;
+  
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  
+  .market-card-dex
+    .market-card-contract
+    button {
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+
+
+  /* =========================================================
+   TOKEN IDENTICON FALLBACK
+   ========================================================= */
+
+.token-identicon {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background:
+    radial-gradient(
+      circle at center,
+      rgba(166, 255, 0, 0.08),
+      transparent 58%
+    ),
+    #080b08;
+}
+
+
+.token-identicon-grid {
+  width: 42%;
+  aspect-ratio: 1 / 1;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      var(--identicon-size),
+      1fr
+    );
+
+  gap: 5%;
+
+  padding: 4%;
+
+  transform: rotate(45deg);
+}
+
+
+.token-identicon-grid span {
+  display: block;
+
+  aspect-ratio: 1 / 1;
+
+  border-radius: 2px;
+
+  background:
+    rgba(
+      166,
+      255,
+      0,
+      0.035
+    );
+}
+
+
+.token-identicon-grid
+  span.is-active {
+  background: #a6ff00;
+
+  box-shadow:
+    0 0 12px
+    rgba(166, 255, 0, 0.22);
 }
 
   

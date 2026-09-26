@@ -244,6 +244,27 @@ async function withRpcRetry(
   throw lastError;
 }
 
+/*
+ * ------------------------------------------------------------
+ * SHARED ARC RPC READ
+ * ------------------------------------------------------------
+ *
+ * Allows other ARC Mainnet readers to use the same
+ * rate-limit gate as the Fair Launch market reader.
+ *
+ * IMPORTANT:
+ * Do not create independent public RPC queues elsewhere.
+ */
+
+export async function runArcRpcRead(
+  operation,
+  options
+) {
+  return withRpcRetry(
+    operation,
+    options
+  );
+}
 
   /*
    * ------------------------------------------------------------

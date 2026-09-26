@@ -1,4 +1,8 @@
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+  useMemo,
+} from "react";
 import {
   useWallet,
 } from "./context/wallet-context";
@@ -62,6 +66,24 @@ import {
 import SwapPage from "./pages/SwapPage";
 import GenesisVerifyPage
   from "./pages/GenesisVerifyPage";
+
+import {
+    getArcDexMarket,
+    getCachedArcDexMarket,
+  } from "./lib/arcDexMarket.js";
+
+  import {
+    getArcArgusTokenMetadata,
+    getRecentArcArgusMetadata,
+  } from "./lib/arcArgusMetadata.js";
+
+  import {
+    buyDexToken,
+    sellDexToken,
+    getDexTokenBalance,
+    getDexUsdcBalance,
+  } from "./contracts/dexTradeWriter.js";
+
 import "./App.css";
 
 
@@ -251,6 +273,15 @@ function App() {
     marketFilter,
     setMarketFilter
   ] = useState("");
+
+  const [dexTokens, setDexTokens] =
+    useState([]);
+
+  const [dexMarketLoading, setDexMarketLoading] =
+    useState(false);
+
+  const [dexMarketError, setDexMarketError] =
+    useState(null);
 
   const [
     activePage,
@@ -883,7 +914,7 @@ function App() {
     }
   };
 
-  const refreshTradeTokenBalance =
+const refreshTradeTokenBalance =
   async (
     launch =
       selectedLaunch
@@ -903,17 +934,44 @@ function App() {
     }
 
     try {
-      const balance =
-        await getTradeTokenBalance({
-          eip1193Provider:
-            selectedProvider.provider,
+      let balance;
 
-          tokenAddress:
-            launch.tokenAddress,
+      if (
+        launch?.source === "DEX"
+      ) {
+        /*
+         * DEX token:
+         * read real ERC-20 decimals.
+         */
+        balance =
+          await getDexTokenBalance({
+            eip1193Provider:
+              selectedProvider.provider,
 
-          walletAddress:
-            address,
-        });
+            tokenAddress:
+              launch.tokenAddress,
+
+            walletAddress:
+              address,
+          });
+
+      } else {
+        /*
+         * Existing SEIS flow.
+         * Keep unchanged.
+         */
+        balance =
+          await getTradeTokenBalance({
+            eip1193Provider:
+              selectedProvider.provider,
+
+            tokenAddress:
+              launch.tokenAddress,
+
+            walletAddress:
+              address,
+          });
+      }
 
       setTradeTokenBalance(
         balance
@@ -1042,32 +1100,32 @@ function App() {
       : 50;
 
 
-useEffect(() => {
-  if (
-    topVolumeTokens.length <= 1
-  ) {
-    return;
-  }
+    useEffect(() => {
+      if (
+        topVolumeTokens.length <= 1
+      ) {
+        return;
+      }
 
-  const timer =
-    setInterval(() => {
-      setHotIndex(
-        (current) =>
-          (
-            current + 1
-          ) %
-          topVolumeTokens.length
-      );
-    }, 2000);
+      const timer =
+        setInterval(() => {
+          setHotIndex(
+            (current) =>
+              (
+                current + 1
+              ) %
+              topVolumeTokens.length
+          );
+        }, 2000);
 
 
-  return () => {
-    clearInterval(timer);
-  };
+      return () => {
+        clearInterval(timer);
+      };
 
-}, [
-  topVolumeTokens.length,
-]);
+    }, [
+      topVolumeTokens.length,
+    ]);
 
 
 
@@ -1360,30 +1418,30 @@ useEffect(() => {
     ) {
       return;
     }
-
+  
     setTradeError("");
-
+  
     if (!connected) {
       setTradeError(
         "Connect your wallet before trading."
       );
       return;
     }
-
+  
     if (!isArcMainnet) {
       setTradeError(
         "Switch to ARC Mainnet before trading."
       );
       return;
     }
-
+  
     if (!selectedProvider?.provider) {
       setTradeError(
         "Wallet provider unavailable."
       );
       return;
     }
-
+  
     if (
       !tradeAmount ||
       Number(tradeAmount) <= 0
@@ -1393,12 +1451,104 @@ useEffect(() => {
       );
       return;
     }
-
+  
     try {
       setTrading(true);
-
+  
+      /*
+       * ==================================================
+       * DEX
+       * ==================================================
+       */
+      if (
+        selectedLaunch?.source === "DEX"
+      ) {
+        let tradeResult;
+  
+        if (
+          tradeSide === "BUY"
+        ) {
+          tradeResult =
+            await buyDexToken({
+              eip1193Provider:
+                selectedProvider.provider,
+  
+              walletAddress:
+                address,
+  
+              tokenAddress:
+                selectedLaunch.tokenAddress,
+  
+              amount:
+                tradeAmount,
+            });
+  
+        } else {
+          tradeResult =
+            await sellDexToken({
+              eip1193Provider:
+                selectedProvider.provider,
+  
+              walletAddress:
+                address,
+  
+              tokenAddress:
+                selectedLaunch.tokenAddress,
+  
+              amount:
+                tradeAmount,
+            });
+        }
+  
+        /*
+         * buyDexToken / sellDexToken
+         * only return after the transaction
+         * receipt has been received.
+         */
+        if (
+          !tradeResult?.transactionHash
+        ) {
+          throw new Error(
+            "DEX transaction was not confirmed."
+          );
+        }
+  
+        /*
+         * Unlock immediately after the
+         * confirmed DEX transaction.
+         */
+        setTrading(false);
+  
+        /*
+         * DEX has no SEIS launchId and must
+         * never enter the SEIS refresh path.
+         *
+         * Refresh only balances that are
+         * authoritative immediately after
+         * the transaction.
+         */
+        await Promise.allSettled([
+          refreshTradeTokenBalance(
+            selectedLaunch
+          ),
+  
+          refreshTradeQuoteBalance(
+            selectedLaunch
+          ),
+        ]);
+  
+        return;
+      }
+  
+      /*
+       * ==================================================
+       * SEIS
+       * ==================================================
+       *
+       * Existing flow remains unchanged.
+       */
       let tradeResult;
-
+  
       if (
         tradeSide === "BUY"
       ) {
@@ -1406,111 +1556,107 @@ useEffect(() => {
           await buyFairToken({
             eip1193Provider:
               selectedProvider.provider,
-
+  
             expectedAddress:
               address,
-
+  
             launchId:
               selectedLaunch.launchId,
-
+  
             amount:
               tradeAmount,
           });
+  
       } else {
         tradeResult =
           await sellFairToken({
             eip1193Provider:
               selectedProvider.provider,
-
+  
             expectedAddress:
               address,
-
+  
             launchId:
               selectedLaunch.launchId,
-
+  
             tokenAddress:
               selectedLaunch.tokenAddress,
-
+  
             amount:
               tradeAmount,
           });
       }
-
+  
       /*
-       * On-chain transaction is already
-       * confirmed at this point.
+       * Existing SEIS indexing.
        *
-       * Supabase indexing failure must not
-       * turn the trade into a failed trade.
+       * Indexing failure must not turn
+       * a confirmed transaction into a
+       * failed trade.
        */
       try {
         await saveTradeEvent({
           transactionHash:
             tradeResult.transactionHash,
-
+  
           launchId:
             selectedLaunch.launchId,
-
+  
           tokenAddress:
             selectedLaunch.tokenAddress,
-
+  
           traderAddress:
             address,
         });
-
+  
       } catch (tradeEventError) {
         console.error(
           "Trade event save failed:",
           tradeEventError
         );
       }
-
+  
       /*
-       * Unlock immediately after
-       * confirmed trade.
-       *
-       * Keep tradeAmount unchanged so
-       * user may trade again instantly.
+       * Existing SEIS behavior.
        */
       setTrading(false);
-
-      /*
-       * Refresh ancillary UI independently.
-       */
+  
       await Promise.allSettled([
         refreshSingleLaunch(
           selectedLaunch
         ),
-
+  
         refreshTradeStats(
           selectedLaunch.launchId
         ),
-
+  
         refreshTradeTokenBalance(
           selectedLaunch
         ),
-
-        refreshTradeQuoteBalance(),
-
+  
+        refreshTradeQuoteBalance(
+          selectedLaunch
+        ),
+  
         refreshTradeHistory(
           selectedLaunch.launchId
         ),
-
+  
         refreshTokenHolders(
           selectedLaunch
         ),
-
+  
         refreshPlatformStats(),
-
+  
         refreshTopVolumeTokens(),
       ]);
-
+  
     } catch (error) {
       console.error(
         `${tradeSide} failed:`,
         error
       );
-
+  
       if (
         error?.code === 4001 ||
         error?.code ===
@@ -1519,6 +1665,7 @@ useEffect(() => {
         setTradeError(
           "Transaction was rejected."
         );
+  
       } else {
         setTradeError(
           error?.shortMessage ||
@@ -1527,7 +1674,7 @@ useEffect(() => {
           `Unable to ${tradeSide.toLowerCase()} token.`
         );
       }
-
+  
     } finally {
       setTrading(false);
     }
@@ -2176,63 +2323,131 @@ const chartPolyline =
     };
   };
 
-  const tickerTokens =
-  liveLaunches
-    .map((launch) => {
-      const progressScaled =
-        launch.raw.bondingSupply > 0n
-          ? (
-              launch.raw.tokensSold *
-              1_000_000n
-            ) /
-            launch.raw.bondingSupply
-          : 0n;
 
-      const progress =
-        Number(progressScaled) /
-        10_000;
+  const tickerTokens = useMemo(() => {
+    const seisTokens =
+      liveLaunches
+        .filter(
+          (launch) =>
+            launch.tokenAddress &&
+            launch.symbol &&
+            launch.logoUrl
+        )
+        .map((launch) => ({
+          source: "SEIS",
+  
+          tokenAddress:
+            launch.tokenAddress,
+  
+          symbol:
+            launch.symbol,
+  
+          logoUrl:
+            launch.logoUrl,
+  
+          logoCandidates: [
+            launch.logoUrl,
+          ],
+        }));
+  
+  
+    const dexLogoTokens =
+      dexTokens
+        .filter(
+          (token) =>
+            token.tokenAddress &&
+            token.symbol &&
+            (
+              token.logoUrl ||
+              (
+                Array.isArray(
+                  token.logoCandidates
+                ) &&
+                token.logoCandidates.length > 0
+              )
+            )
+        )
+        .map((token) => ({
+          source: "DEX",
+  
+          tokenAddress:
+            token.tokenAddress,
+  
+          symbol:
+            token.symbol,
+  
+          logoUrl:
+            token.logoUrl,
+  
+          logoCandidates:
+            token.logoCandidates,
+        }));
+  
+  
+    const combined = [
+      ...dexLogoTokens,
+      ...seisTokens,
+    ];
+  
+  
+    // Fisher-Yates shuffle
+    for (
+      let i = combined.length - 1;
+      i > 0;
+      i--
+    ) {
+      const j =
+        Math.floor(
+          Math.random() * (i + 1)
+        );
+  
+      [
+        combined[i],
+        combined[j],
+      ] = [
+        combined[j],
+        combined[i],
+      ];
+    }
+  
+  
+    return combined;
+  }, [
+    liveLaunches,
+    dexTokens,
+  ]);
 
-      return {
-        tokenAddress:
-          launch.tokenAddress,
 
-        symbol:
-          launch.symbol,
+  const refreshTradeQuoteBalance =
+  async (
+    launch =
+      selectedLaunch
+  ) => {
+    if (
+      !connected ||
+      !address ||
+      !selectedProvider?.provider
+    ) {
+      setTradeQuoteBalance({
+        raw: 0n,
+        formatted: "0",
+      });
 
-        logoUrl:
-          launch.logoUrl,
+      return null;
+    }
 
-        progress,
-      };
-    })
-    .filter(
-      (token) =>
-        token.progress > 0
-    )
-    .sort(
-      (a, b) =>
-        b.progress -
-        a.progress
-    );
+    try {
+      let balance;
 
-    const refreshTradeQuoteBalance =
-    async () => {
       if (
-        !connected ||
-        !address ||
-        !selectedProvider?.provider
+        launch?.source === "DEX"
       ) {
-        setTradeQuoteBalance({
-          raw: 0n,
-          formatted: "0",
-        });
-
-        return null;
-      }
-
-      try {
-        const balance =
-          await getTradeQuoteBalance({
+        /*
+         * DEX BUY balance:
+         * real ERC-20 Arc USDC.
+         */
+        balance =
+          await getDexUsdcBalance({
             eip1193Provider:
               selectedProvider.provider,
 
@@ -2240,42 +2455,60 @@ const chartPolyline =
               address,
           });
 
-        setTradeQuoteBalance(
-          balance
-        );
+      } else {
+        /*
+         * Existing SEIS quote/native
+         * balance. Keep unchanged.
+         */
+        balance =
+          await getTradeQuoteBalance({
+            eip1193Provider:
+              selectedProvider.provider,
 
-        return balance;
-
-      } catch (error) {
-        console.error(
-          "Failed to load USDC balance:",
-          error
-        );
-
-        return null;
-      }
-    };
-
-    useEffect(() => {
-      if (
-        !connected ||
-        !address
-      ) {
-        setTradeQuoteBalance({
-          raw: 0n,
-          formatted: "0",
-        });
-
-        return;
+            walletAddress:
+              address,
+          });
       }
 
-      refreshTradeQuoteBalance();
+      setTradeQuoteBalance(
+        balance
+      );
 
-    }, [
-      address,
-      connected,
-      selectedProvider?.provider,
-    ]);
+      return balance;
+
+    } catch (error) {
+      console.error(
+        "Failed to load USDC balance:",
+        error
+      );
+
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    if (
+      !connected ||
+      !address
+    ) {
+      setTradeQuoteBalance({
+        raw: 0n,
+        formatted: "0",
+      });
+  
+      return;
+    }
+  
+    refreshTradeQuoteBalance(
+      selectedLaunch
+    );
+  
+  }, [
+    address,
+    connected,
+    selectedProvider?.provider,
+    selectedLaunch?.source,
+  ]);
 
     const handleSellPercent = (
       percent
@@ -3415,6 +3648,530 @@ useEffect(() => {
     return <GenesisVerifyPage />;
   }
 
+
+
+  useEffect(() => {
+    let cancelled = false;
+  
+    async function loadDexMarket() {
+      setDexMarketError(null);
+  
+      /*
+       * If stale cache already exists,
+       * show it immediately.
+       *
+       * Do not cover usable market data
+       * with the loading overlay.
+       */
+      const cachedMarket =
+        getCachedArcDexMarket();
+  
+      const hasCachedTokens =
+        Array.isArray(
+          cachedMarket?.tokens
+        ) &&
+        cachedMarket.tokens.length > 0;
+  
+      if (hasCachedTokens) {
+        setDexTokens(
+          cachedMarket.tokens
+        );
+  
+        setDexMarketLoading(false);
+      } else {
+        /*
+         * No cache at all.
+         *
+         * Show loader only until the
+         * initial 30-token batch arrives.
+         */
+        setDexMarketLoading(true);
+      }
+  
+      try {
+        await getArcDexMarket({
+          /*
+           * Critical first paint.
+           *
+           * As soon as the first 30 tokens
+           * are available, release the UI.
+           */
+          onInitialBatch: (
+            market
+          ) => {
+            if (cancelled) {
+              return;
+            }
+  
+            const tokens =
+              Array.isArray(
+                market?.tokens
+              )
+                ? market.tokens
+                : [];
+  
+            setDexTokens(
+              tokens
+            );
+  
+            setDexMarketLoading(
+              false
+            );
+          },
+  
+          /*
+           * Remaining batches arrive in
+           * the background.
+           *
+           * Never turn the loading overlay
+           * back on here.
+           */
+          onBatch: (
+            market
+          ) => {
+            if (cancelled) {
+              return;
+            }
+  
+            const tokens =
+              Array.isArray(
+                market?.tokens
+              )
+                ? market.tokens
+                : [];
+  
+            setDexTokens(
+              tokens
+            );
+          },
+        });
+  
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+  
+        console.error(
+          "Failed to load ARC DEX market:",
+          error
+        );
+  
+        /*
+         * Preserve stale cache if the
+         * network refresh fails.
+         */
+        const fallbackMarket =
+          getCachedArcDexMarket();
+  
+        if (
+          Array.isArray(
+            fallbackMarket?.tokens
+          ) &&
+          fallbackMarket.tokens.length > 0
+        ) {
+          setDexTokens(
+            fallbackMarket.tokens
+          );
+  
+          setDexMarketError(
+            null
+          );
+  
+        } else {
+          setDexMarketError(
+            error instanceof Error
+              ? error.message
+              : "Failed to load DEX market."
+          );
+        }
+  
+      } finally {
+        /*
+         * Safety fallback.
+         *
+         * Normally the loader is already
+         * removed by onInitialBatch.
+         */
+        if (!cancelled) {
+          setDexMarketLoading(
+            false
+          );
+        }
+      }
+    }
+  
+    loadDexMarket();
+  
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+
+  useEffect(() => {
+    let cancelled = false;
+  
+    async function testArgusMetadata() {
+      try {
+  
+        const metadata =
+          await getArcArgusTokenMetadata(
+            "0xdaB8bD22f2BfC8F82ED071A4a337e0637e1bce52"
+          );
+  
+        if (cancelled) return;
+  
+      } catch (error) {
+        if (cancelled) return;
+  
+      }
+    }
+  
+    testArgusMetadata();
+  
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+
+  useEffect(() => {
+    let cancelled = false;
+  
+    async function testRecentArgusBatch() {
+      try {
+  
+        const metadata =
+          await getRecentArcArgusMetadata();
+  
+        if (cancelled) return;
+  
+        const earn =
+          metadata.get(
+            "0xdab8bd22f2bfc8f82ed071a4a337e0637e1bce52"
+          );
+  
+      } catch (error) {
+        if (cancelled) return;
+  
+      }
+    }
+  
+    testRecentArgusBatch();
+  
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+
+
+  const filteredDexTokens =
+  [...dexTokens]
+    .filter((token) => {
+      if (
+        marketFilter ===
+        "NEW_LAUNCH"
+      ) {
+        if (!token.pairCreatedAt) {
+          return false;
+        }
+
+        const ageMs =
+          Date.now() -
+          Number(
+            token.pairCreatedAt
+          );
+
+        const tenHoursMs =
+          10 * 60 * 60 * 1000;
+
+        return (
+          ageMs >= 0 &&
+          ageMs <= tenHoursMs
+        );
+      }
+
+
+      /*
+       * DEX Screener does not expose an
+       * authoritative lastTradeAt field.
+       *
+       * Do not fabricate LAST_TRADE
+       * timestamps from volume/txn data.
+       */
+      if (
+        marketFilter ===
+        "LAST_TRADE"
+      ) {
+        return false;
+      }
+
+
+      return true;
+    })
+    .sort((a, b) => {
+      if (
+        marketFilter ===
+        "NEW_LAUNCH"
+      ) {
+        return (
+          Number(
+            b.pairCreatedAt || 0
+          ) -
+          Number(
+            a.pairCreatedAt || 0
+          )
+        );
+      }
+
+
+      if (
+        marketFilter ===
+        "TOP_MCAP"
+      ) {
+        return (
+          Number(
+            b.marketCap || 0
+          ) -
+          Number(
+            a.marketCap || 0
+          )
+        );
+      }
+
+
+      /*
+       * Default DEX ordering:
+       * highest liquidity first.
+       *
+       * This gives deterministic ordering
+       * without changing SEIS ordering.
+       */
+      return (
+        Number(
+          b.pairCreatedAt || 0
+        ) -
+        Number(
+          a.pairCreatedAt || 0
+        )
+      );
+    })
+    .filter((token) => {
+      const query =
+        tokenSearch
+          .trim()
+          .toLowerCase();
+
+      if (!query) {
+        return true;
+      }
+
+
+      const address =
+        String(
+          token.tokenAddress || ""
+        ).toLowerCase();
+
+      const name =
+        String(
+          token.name || ""
+        ).toLowerCase();
+
+      const symbol =
+        String(
+          token.symbol || ""
+        ).toLowerCase();
+
+
+      return (
+        address.includes(query) ||
+        name.includes(query) ||
+        symbol.includes(query)
+      );
+    });
+
+    function DexTokenLogo({
+      token,
+      fallback = "identicon",
+    }) {
+      const candidates =
+      Array.from(
+        new Set(
+          [
+            ...(Array.isArray(token?.logoCandidates)
+              ? token.logoCandidates
+              : []),
+            token?.logoUrl,
+          ]
+            .filter(Boolean)
+            .filter(
+              (url) =>
+                !String(url)
+                  .toLowerCase()
+                  .includes("ipfs.io/ipfs/")
+            )
+        )
+      );
+    
+      const [
+        imageIndex,
+        setImageIndex,
+      ] = useState(0);
+    
+      const imageUrl =
+        candidates[imageIndex];
+    
+      if (!imageUrl) {
+        if (fallback === "letter") {
+          return (
+            <span>
+              {token?.symbol
+                ?.charAt(0)
+                .toUpperCase() || "?"}
+            </span>
+          );
+        }
+    
+        return (
+          <TokenIdenticon
+            address={
+              token?.tokenAddress
+            }
+          />
+        );
+      }
+    
+      return (
+        <img
+          src={imageUrl}
+          alt={
+            token?.symbol ||
+            token?.name ||
+            "Token"
+          }
+          loading="lazy"
+          onError={() => {
+            setImageIndex(
+              (current) =>
+                current + 1
+            );
+          }}
+        />
+      );
+    }
+
+
+    function TokenIdenticon({
+      address,
+      size = 5,
+    }) {
+      const normalized =
+        String(address || "")
+          .toLowerCase()
+          .replace(/^0x/, "");
+    
+      /*
+       * Build a deterministic 5x5 pattern.
+       * Left side is generated from the
+       * contract address and mirrored to
+       * the right side.
+       */
+      const cells = [];
+    
+      for (
+        let row = 0;
+        row < size;
+        row += 1
+      ) {
+        const half =
+          Math.ceil(size / 2);
+    
+        const rowCells = [];
+    
+        for (
+          let column = 0;
+          column < half;
+          column += 1
+        ) {
+          const index =
+            (row * half + column) %
+            Math.max(
+              normalized.length,
+              1
+            );
+    
+          const value =
+            parseInt(
+              normalized[index] || "0",
+              16
+            );
+    
+          rowCells.push(
+            value % 2 === 0
+          );
+        }
+    
+        const mirrored =
+          [
+            ...rowCells,
+            ...rowCells
+              .slice(
+                0,
+                Math.floor(
+                  size / 2
+                )
+              )
+              .reverse(),
+          ];
+    
+        cells.push(
+          ...mirrored
+        );
+      }
+    
+    
+      /*
+       * Accent is also derived from the
+       * address, but stays inside the
+       * SEIS green visual language.
+       */
+    
+    
+      return (
+        <div
+          className="token-identicon"
+          aria-hidden="true"
+        >
+          <div
+            className="token-identicon-grid"
+            style={{
+              "--identicon-size":
+                size,
+    
+            }}
+          >
+            {cells.map(
+              (active, index) => (
+                <span
+                  key={index}
+                  className={
+                    active
+                      ? "is-active"
+                      : ""
+                  }
+                />
+              )
+            )}
+          </div>
+        </div>
+      );
+    }
+
+
+
+
+
   return (
     <div className="terminal-app">
       <button
@@ -3728,6 +4485,10 @@ useEffect(() => {
                     role="button"
                     tabIndex={0}
                     onClick={() => {
+                      if (token.source !== "SEIS") {
+                        return;
+                      }
+                    
                       const launch =
                         liveLaunches.find(
                           (item) =>
@@ -3736,43 +4497,54 @@ useEffect(() => {
                             token.tokenAddress
                               .toLowerCase()
                         );
-
+                    
                       if (!launch) {
                         return;
                       }
-
+                    
                       setSelectedLaunch(launch);
                       setTradeSide("BUY");
                       setTradeModalOpen(true);
                     }}
                     onKeyDown={(event) => {
                       if (
-                        event.key === "Enter" ||
-                        event.key === " "
+                        event.key !== "Enter" &&
+                        event.key !== " "
                       ) {
-                        event.preventDefault();
-
-                        const launch =
-                          liveLaunches.find(
-                            (item) =>
-                              item.tokenAddress
-                                .toLowerCase() ===
-                              token.tokenAddress
-                                .toLowerCase()
-                          );
-
-                        if (!launch) {
-                          return;
-                        }
-
-                        setSelectedLaunch(launch);
-                        setTradeSide("BUY");
-                        setTradeModalOpen(true);
+                        return;
                       }
+                    
+                      if (token.source !== "SEIS") {
+                        return;
+                      }
+                    
+                      event.preventDefault();
+                    
+                      const launch =
+                        liveLaunches.find(
+                          (item) =>
+                            item.tokenAddress
+                              .toLowerCase() ===
+                            token.tokenAddress
+                              .toLowerCase()
+                        );
+                    
+                      if (!launch) {
+                        return;
+                      }
+                    
+                      setSelectedLaunch(launch);
+                      setTradeSide("BUY");
+                      setTradeModalOpen(true);
                     }}
                   >
                       <div className="market-ticker-logo">
-                        {token.logoUrl ? (
+                        {token.source === "DEX" ? (
+                            <DexTokenLogo
+                            token={token}
+                            fallback="letter"
+                            />
+                        ) : token.logoUrl ? (
                           <img
                             src={token.logoUrl}
                             alt=""
@@ -3792,9 +4564,6 @@ useEffect(() => {
                         {token.symbol}
                       </strong>
 
-                      <span>
-                        +{token.progress.toFixed(4)}%
-                      </span>
                     </div>
                   )
                 )}
@@ -3803,9 +4572,18 @@ useEffect(() => {
             </div>
           </div>
 
-          <div className="market-table">
+          <div
+            className={`market-table ${
+              (launchesLoading || dexMarketLoading)
+                ? "market-table-loading"
+                : ""
+            }`}
+          >
 
-            {launchesLoading && liveLaunches.length === 0 && (
+            {(
+              (launchesLoading && liveLaunches.length === 0) ||
+              dexMarketLoading
+            ) && (
               <div className="market-loading-layer">
                 <div className="market-loading-toast">
                   <div className="market-loading-spinner" />
@@ -3861,6 +4639,416 @@ useEffect(() => {
                 </div>
             )}
             <div className="market-card-grid">
+
+            {!dexMarketLoading &&
+                !dexMarketError &&
+                filteredDexTokens.map(
+                  (token) => {
+                    const marketCap =
+                      Number(
+                        token.marketCap || 0
+                      );
+
+                    const priceUsd =
+                      Number(
+                        token.priceUsd || 0
+                      );
+
+                    const liquidityUsd =
+                      Number(
+                        token.liquidityUsd || 0
+                      );
+
+                    const volume24h =
+                      Number(
+                        token.volume24h || 0
+                      );
+
+                    const txns24h =
+                      Number(
+                        token.txns24h || 0
+                      );
+
+
+                    const formatUsd = (
+                      value
+                    ) => {
+                      const number =
+                        Number(value);
+
+                      if (
+                        !Number.isFinite(
+                          number
+                        )
+                      ) {
+                        return "$0";
+                      }
+
+                      if (
+                        number >= 1_000_000_000
+                      ) {
+                        return `$${(
+                          number /
+                          1_000_000_000
+                        ).toFixed(2)}B`;
+                      }
+
+                      if (
+                        number >= 1_000_000
+                      ) {
+                        return `$${(
+                          number /
+                          1_000_000
+                        ).toFixed(2)}M`;
+                      }
+
+                      if (
+                        number >= 1_000
+                      ) {
+                        return `$${(
+                          number /
+                          1_000
+                        ).toFixed(2)}K`;
+                      }
+
+                      return `$${number.toFixed(
+                        2
+                      )}`;
+                    };
+
+
+                    const formatPrice = (
+                      value
+                    ) => {
+                      const number =
+                        Number(value);
+
+                      if (
+                        !Number.isFinite(
+                          number
+                        ) ||
+                        number <= 0
+                      ) {
+                        return "$0";
+                      }
+
+                      if (number >= 1) {
+                        return `$${number.toLocaleString(
+                          undefined,
+                          {
+                            maximumFractionDigits:
+                              6,
+                          }
+                        )}`;
+                      }
+
+                      return `$${number.toLocaleString(
+                        undefined,
+                        {
+                          maximumSignificantDigits:
+                            6,
+                        }
+                      )}`;
+                    };
+
+
+                    return (
+                      <article
+                        key={`DEX-${token.tokenAddress}`}
+                        className="market-card market-card-dex"
+                        tabIndex={0}
+                        role="button"
+                        onClick={() => {
+                          setSelectedLaunch({
+                            source: "DEX",
+                        
+                            tokenAddress:
+                              token.tokenAddress,
+                        
+                            name:
+                              token.name ||
+                              "Unknown Token",
+                        
+                            symbol:
+                              token.symbol ||
+                              "UNKNOWN",
+                        
+                            logoUrl:
+                              token.logoUrl ||
+                              "",
+                        
+                            logoCandidates:
+                              token.logoCandidates ||
+                              [],
+                        
+                            creator: null,
+                        
+                            dexId:
+                              token.dexId ||
+                              "",
+                        
+                            pairAddress:
+                              token.pairAddress ||
+                              "",
+                        
+                            quoteAddress:
+                              token.quoteAddress ||
+                              "",
+                        
+                            quoteSymbol:
+                              token.quoteSymbol ||
+                              "USDC",
+                        
+                            priceUsd:
+                              token.priceUsd || 0,
+                        
+                            marketCap:
+                              token.marketCap || 0,
+                        
+                            liquidityUsd:
+                              token.liquidityUsd || 0,
+                        
+                            volume24h:
+                              token.volume24h || 0,
+                        
+                            priceChange24h:
+                              token.priceChange24h || 0,
+                        
+                            buys24h:
+                              token.buys24h || 0,
+                        
+                            sells24h:
+                              token.sells24h || 0,
+                        
+                            txns24h:
+                              token.txns24h || 0,
+                        
+                            rawDex:
+                              token,
+                          });
+                        
+                          setTradeSide("BUY");
+                          setTradeModalOpen(true);
+                        }}
+                        onKeyDown={(event) => {
+                          if (
+                            event.key === "Enter" ||
+                            event.key === " "
+                          ) {
+                            event.preventDefault();
+                        
+                            setSelectedLaunch({
+                              source: "DEX",
+                        
+                              tokenAddress:
+                                token.tokenAddress,
+                        
+                              name:
+                                token.name ||
+                                "Unknown Token",
+                        
+                              symbol:
+                                token.symbol ||
+                                "UNKNOWN",
+                        
+                              logoUrl:
+                                token.logoUrl ||
+                                "",
+                        
+                              logoCandidates:
+                                token.logoCandidates ||
+                                [],
+                        
+                              creator: null,
+                        
+                              dexId:
+                                token.dexId ||
+                                "",
+                        
+                              pairAddress:
+                                token.pairAddress ||
+                                "",
+                        
+                              quoteAddress:
+                                token.quoteAddress ||
+                                "",
+                        
+                              quoteSymbol:
+                                token.quoteSymbol ||
+                                "USDC",
+                        
+                              priceUsd:
+                                token.priceUsd || 0,
+                        
+                              marketCap:
+                                token.marketCap || 0,
+                        
+                              liquidityUsd:
+                                token.liquidityUsd || 0,
+                        
+                              volume24h:
+                                token.volume24h || 0,
+                        
+                              priceChange24h:
+                                token.priceChange24h || 0,
+                        
+                              buys24h:
+                                token.buys24h || 0,
+                        
+                              sells24h:
+                                token.sells24h || 0,
+                        
+                              txns24h:
+                                token.txns24h || 0,
+                        
+                              rawDex:
+                                token,
+                            });
+                        
+                            setTradeSide("BUY");
+                            setTradeModalOpen(true);
+                          }
+                        }}
+                      >
+                        <div className="market-card-media">
+                          <div className="market-card-media">
+                            <DexTokenLogo
+                              token={token}
+                            />
+                          </div>
+                        </div>
+
+
+                        <div className="market-card-body">
+                          <div className="market-card-title-row">
+                            <div>
+                              <h3>
+                                {token.name ||
+                                  "Unknown Token"}
+                              </h3>
+
+                              <span>
+                                $
+                                {token.symbol ||
+                                  "UNKNOWN"}
+                              </span>
+                            </div>
+
+                            <span>
+                              DEX
+                            </span>
+                          </div>
+
+
+                          <div className="market-card-mcap">
+                            <span>
+                              MC
+                            </span>
+
+                            <strong>
+                              {formatUsd(
+                                marketCap
+                              )}
+                            </strong>
+                          </div>
+
+
+                          <div className="market-card-stats">
+                            <div>
+                              <span>
+                                PRICE
+                              </span>
+
+                              <strong>
+                                {formatPrice(
+                                  priceUsd
+                                )}
+                              </strong>
+                            </div>
+
+                            <div>
+                              <span>
+                                TXNS 24H
+                              </span>
+
+                              <strong>
+                                {txns24h.toLocaleString()}
+                              </strong>
+                            </div>
+                          </div>
+
+
+                          <div className="market-card-stats">
+                            <div>
+                              <span>
+                                LIQUIDITY
+                              </span>
+
+                              <strong>
+                                {formatUsd(
+                                  liquidityUsd
+                                )}
+                              </strong>
+                            </div>
+
+                            <div>
+                              <span>
+                                VOL 24H
+                              </span>
+
+                              <strong>
+                                {formatUsd(
+                                  volume24h
+                                )}
+                              </strong>
+                            </div>
+                          </div>
+
+
+                          <div className="market-card-contract">
+                            <span>
+                              CONTRACT
+                            </span>
+
+                            <strong>
+                              {token.tokenAddress
+                                ? `${token.tokenAddress.slice(
+                                    0,
+                                    6
+                                  )}...${token.tokenAddress.slice(
+                                    -4
+                                  )}`
+                                : "--"}
+                            </strong>
+
+                            <button
+                              type="button"
+                              onClick={(
+                                event
+                              ) => {
+                                event.stopPropagation();
+
+                                if (
+                                  token.tokenAddress
+                                ) {
+                                  navigator.clipboard
+                                    ?.writeText(
+                                      token.tokenAddress
+                                    );
+                                }
+                              }}
+                              aria-label="Copy token contract"
+                            >
+                              COPY
+                            </button>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  }
+                )}
+
+
             {!launchesLoading &&
               !launchesError &&
               [...liveLaunches]
@@ -4238,6 +5426,7 @@ useEffect(() => {
                     </div>
                   );
               })}
+
               </div>
               {launchOpen && (
                 <div
@@ -4886,7 +6075,19 @@ useEffect(() => {
 
                       <div className="trade-terminal-mcap">
                         <span>Market cap</span>
-                        <strong>$10K</strong>
+                        <strong>
+                          {selectedLaunch?.source === "DEX"
+                            ? `$${Number(
+                                selectedLaunch.marketCap || 0
+                              ).toLocaleString(
+                                undefined,
+                                {
+                                  notation: "compact",
+                                  maximumFractionDigits: 2,
+                                }
+                              )}`
+                            : "$10K"}
+                        </strong>
                       </div>
 
                       <button
@@ -5414,6 +6615,7 @@ useEffect(() => {
                               </>
                             )}
                           </div>
+                          
 
                           <button
                             type="button"
@@ -5509,7 +6711,16 @@ useEffect(() => {
                                     : "stats-negative"
                               }
                             >
-                              {formattedPriceChange}
+                              {selectedLaunch?.source === "DEX"
+                              ? `${Number(
+                                  selectedLaunch.priceChange24h || 0
+                                ) >= 0
+                                  ? "+"
+                                  : ""
+                                }${Number(
+                                  selectedLaunch.priceChange24h || 0
+                                ).toFixed(2)}%`
+                              : formattedPriceChange}
                             </span>
                           </div>
 
@@ -5519,18 +6730,38 @@ useEffect(() => {
                             </span>
 
                             <span>
-                              ${formattedStatsVolume}
+                              {selectedLaunch?.source === "DEX"
+                              ? `$${Number(
+                                  selectedLaunch.volume24h || 0
+                                ).toLocaleString(
+                                  undefined,
+                                  {
+                                    notation: "compact",
+                                    maximumFractionDigits: 2,
+                                  }
+                                )}`
+                              : `$${formattedStatsVolume}`}
                             </span>
                           </div>
 
                           <div className="trade-stat-bars">
                             <div>
                             <span className="positive">
-                              {tradeStats.buyCount} buys
+                              {selectedLaunch?.source === "DEX"
+                                ? Number(
+                                    selectedLaunch.buys24h || 0
+                                  ).toLocaleString()
+                                : tradeStats.buyCount}{" "}
+                              buys
                             </span>
 
                             <span className="negative">
-                              {tradeStats.sellCount} sells
+                              {selectedLaunch?.source === "DEX"
+                                ? Number(
+                                    selectedLaunch.sells24h || 0
+                                  ).toLocaleString()
+                                : tradeStats.sellCount}{" "}
+                              sells
                             </span>
                             </div>
 
@@ -5567,17 +6798,19 @@ useEffect(() => {
                           </strong>
                         </div>
 
-                        <div className="trade-box">
-                          <div className="trade-progress-row">
-                            <strong>MC $10K</strong>
-                            <span>→</span>
-                            <strong>$60K</strong>
-                          </div>
+                        {selectedLaunch?.source !== "DEX" && (
+                          <div className="trade-box">
+                            <div className="trade-progress-row">
+                              <strong>MC $10K</strong>
+                              <span>→</span>
+                              <strong>$60K</strong>
+                            </div>
 
-                          <div className="trade-progress-track">
-                            <span />
+                            <div className="trade-progress-track">
+                              <span />
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
