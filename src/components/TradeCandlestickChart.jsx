@@ -73,11 +73,29 @@ import {
         );
   
   
-      const quoteAmount =
+        const hasNormalizedQuoteAmount =
+        trade.quoteAmountUsd !== null &&
+        trade.quoteAmountUsd !== undefined &&
+        trade.quoteAmountUsd !== "";
+      
+      const normalizedQuoteAmount =
+        Number(
+          trade.quoteAmountUsd
+        );
+      
+      const legacyQuoteAmount =
         Number(
           trade.quote_amount
         ) /
         1e18;
+      
+      const quoteAmount =
+        hasNormalizedQuoteAmount &&
+        Number.isFinite(
+          normalizedQuoteAmount
+        )
+          ? normalizedQuoteAmount
+          : legacyQuoteAmount;
   
   
       const existing =

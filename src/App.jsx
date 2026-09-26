@@ -84,6 +84,10 @@ import {
     getDexUsdcBalance,
   } from "./contracts/dexTradeWriter.js";
 
+  import {
+    getArcDexTradeHistory,
+  } from "./lib/arcDexTradeHistory.js";
+
 import "./App.css";
 
 
@@ -876,43 +880,67 @@ function App() {
     }
   };
 
-  const refreshTradeHistory =
-  async (launchId) => {
+const refreshTradeHistory =
+async (launch) => {
+  if (!launch) {
+    setTradeHistory([]);
+    return [];
+  }
+
+  try {
+    setTradeHistoryLoading(true);
+
+    let history = [];
+
     if (
-      launchId === null ||
-      launchId === undefined
+      launch.source === "DEX"
     ) {
-      setTradeHistory([]);
-      return [];
-    }
+      if (
+        !launch.tokenAddress
+      ) {
+        setTradeHistory([]);
+        return [];
+      }
 
-    try {
-      setTradeHistoryLoading(true);
-
-      const history =
-        await getTradeHistory(
-          launchId
+      history =
+        await getArcDexTradeHistory(
+          launch.tokenAddress
         );
-
-
-      setTradeHistory(
-        history
-      );
-
-      return history;
-
-    } catch (error) {
-      console.error(
-        "Failed to load trade history:",
-        error
-      );
-
-      return [];
-
-    } finally {
-      setTradeHistoryLoading(false);
+    } else {
+      if (
+        launch.launchId === null ||
+        launch.launchId === undefined
+      ) {
+        setTradeHistory([]);
+        return [];
+      }
+      
+      history =
+        await getTradeHistory(
+          launch.launchId
+        );
     }
-  };
+
+    setTradeHistory(
+      history
+    );
+
+    return history;
+
+  } catch (error) {
+    console.error(
+      "Failed to load trade history:",
+      error
+    );
+
+    setTradeHistory([]);
+
+    return [];
+
+  } finally {
+    setTradeHistoryLoading(false);
+  }
+};
 
 const refreshTradeTokenBalance =
   async (
@@ -1028,20 +1056,40 @@ const refreshTradeTokenBalance =
   ]);
 
   useEffect(() => {
+    if (!selectedLaunch) {
+      setTradeHistory([]);
+      return;
+    }
+  
+    /*
+     * DEX history is keyed by tokenAddress.
+     * SEIS history is keyed by launchId.
+     */
     if (
-      selectedLaunch?.launchId ===
+      selectedLaunch.source === "DEX"
+    ) {
+      if (
+        !selectedLaunch.tokenAddress
+      ) {
+        setTradeHistory([]);
+        return;
+      }
+    } else if (
+      selectedLaunch.launchId ===
         undefined ||
-      selectedLaunch?.launchId ===
+      selectedLaunch.launchId ===
         null
     ) {
       setTradeHistory([]);
       return;
     }
-
+  
     refreshTradeHistory(
-      selectedLaunch.launchId
+      selectedLaunch
     );
   }, [
+    selectedLaunch?.source,
+    selectedLaunch?.tokenAddress,
     selectedLaunch?.launchId,
   ]);
 
@@ -1639,7 +1687,7 @@ const refreshTradeTokenBalance =
         ),
   
         refreshTradeHistory(
-          selectedLaunch.launchId
+          selectedLaunch
         ),
   
         refreshTokenHolders(
