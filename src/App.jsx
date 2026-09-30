@@ -88,6 +88,8 @@ import {
     getArcDexTradeHistory,
   } from "./lib/arcDexTradeHistory.js";
 
+  import TokenomicsPage from "./components/TokenomicsPage.jsx";
+  
 import "./App.css";
 
 
@@ -4318,6 +4320,26 @@ useEffect(() => {
               </span>
             </button>
 
+            <button
+              type="button"
+              className={
+                activePage === "TOKENOMICS"
+                  ? "sidebar-nav-item sidebar-nav-active"
+                  : "sidebar-nav-item"
+              }
+              onClick={() => {
+                setActivePage("TOKENOMICS");
+              }}
+            >
+              <span className="sidebar-nav-icon">
+                ◫
+              </span>
+
+              <span className="sidebar-nav-label">
+                TOKENOMICS
+              </span>
+            </button>
+
             <div className="sidebar-nav-divider" />
 
             <button
@@ -7977,6 +7999,10 @@ useEffect(() => {
             eip1193Provider={selectedProvider?.provider || null}
             switchToArcMainnet={switchToArcMainnet}
           />
+        )}
+
+        {activePage === "TOKENOMICS" && (
+          <TokenomicsPage />
         )}
 
         {activePage === "DOCS" && (
