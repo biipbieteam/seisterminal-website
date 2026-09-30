@@ -435,22 +435,59 @@ async function loadArcDexMarket({
    * INITIAL BATCH
    * --------------------------------------------------
    *
-   * Only enrich the first 30 contracts.
+   * Build the first visible market from up to
+   * 30 usable DEX tokens — not merely the first
+   * 30 discovered contract addresses.
+   *
+   * Discovery addresses may include contracts
+   * that DEX Screener cannot currently resolve
+   * into a canonical ARC pair.
+   *
+   * Continue through discovery in groups of 30
+   * until the first visible market is populated
+   * or all currently-known addresses are checked.
    *
    * Do NOT wait for Argus here.
    */
-  const initialAddresses =
-    tokenAddresses.slice(
+  let initialScanEnd = 0;
+  let initialDexTokens = [];
+
+  while (
+    initialScanEnd < tokenAddresses.length &&
+    initialDexTokens.length <
+      INITIAL_MARKET_BATCH_SIZE
+  ) {
+    const batchAddresses =
+      tokenAddresses.slice(
+        initialScanEnd,
+        initialScanEnd +
+          INITIAL_MARKET_BATCH_SIZE
+      );
+
+    const batchDexTokens =
+      await getArcTokens(
+        batchAddresses
+      );
+
+    initialDexTokens =
+      mergeTokensByAddress(
+        initialDexTokens,
+        batchDexTokens
+      );
+
+    initialScanEnd +=
+      batchAddresses.length;
+  }
+
+  /*
+   * Keep the critical first paint bounded
+   * to the configured initial market size.
+   */
+  initialDexTokens =
+    initialDexTokens.slice(
       0,
       INITIAL_MARKET_BATCH_SIZE
     );
-
-  const initialDexTokens =
-    initialAddresses.length > 0
-      ? await getArcTokens(
-          initialAddresses
-        )
-      : [];
 
   let loadedTokens =
     attachPoolsToTokens(
@@ -587,7 +624,7 @@ async function loadArcDexMarket({
    */
   for (
     let index =
-      INITIAL_MARKET_BATCH_SIZE;
+      initialScanEnd;
 
     index <
       tokenAddresses.length;
